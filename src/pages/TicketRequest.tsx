@@ -77,6 +77,7 @@ const TicketRequest = () => {
 
   const [selectedRequest, setSelectedRequest] = useState<TicketRequestData | null>(null);
   const [showModal, setShowModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const handleView = (id: number): void => {
@@ -96,8 +97,11 @@ const TicketRequest = () => {
     // Logic to mark the ticket as confirmed
     if (selectedRequest) {
       const updatedRequests = requests.map(req =>
-        req.id === selectedRequest.id ? { ...req, status: "Confirmed" as "Confirmed" } : req
+        req.id === selectedRequest.id
+          ? { ...req, status: "Confirmed" as const }
+          : req
       );
+
       setRequests(updatedRequests);
     }
     setShowConfirmDialog(false);
@@ -151,9 +155,8 @@ const TicketRequest = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        request.status === 'Confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${request.status === 'Confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
                         {request.status}
                       </span>
                     </td>
@@ -178,24 +181,24 @@ const TicketRequest = () => {
       {showModal && selectedRequest && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           {/* Modal backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/50 transition-opacity" 
+          <div
+            className="fixed inset-0 bg-black/50 transition-opacity"
             onClick={closeModal}
             aria-hidden="true"
           ></div>
-          
+
           {/* Modal content */}
           <div className="bg-background rounded-lg shadow-lg w-full max-w-2xl mx-4 z-10">
             <div className="flex items-center justify-between border-b border-border p-4">
               <h3 className="text-lg font-semibold">Ticket Request Details</h3>
-              <button 
+              <button
                 onClick={closeModal}
                 className="p-1 rounded-md hover:bg-muted"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {/* Request Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -205,9 +208,8 @@ const TicketRequest = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Status</p>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    selectedRequest.status === 'Confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${selectedRequest.status === 'Confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>
                     {selectedRequest.status}
                   </span>
                 </div>
@@ -230,7 +232,7 @@ const TicketRequest = () => {
                   <p className="text-sm text-muted-foreground">MCO: ${selectedRequest.mco.toFixed(2)}</p>
                 </div>
               </div>
-              
+
               {/* Credit Card Section */}
               <div>
                 <h4 className="text-md font-semibold mb-3">Payment Information</h4>
@@ -256,7 +258,7 @@ const TicketRequest = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-2 border-t border-border p-4">
               {selectedRequest.status === "Pending" ? (
                 <button

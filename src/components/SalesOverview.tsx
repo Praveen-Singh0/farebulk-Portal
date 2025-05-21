@@ -92,7 +92,7 @@ const SalesOverview = () => {
                     dataKey="sales"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
-                    {dummyData.travelConsultants.map((entry, index) => (
+                    {dummyData.travelConsultants.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -123,7 +123,7 @@ const SalesOverview = () => {
                     dataKey="sales"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
-                    {dummyData.ticketConsultants.map((entry, index) => (
+                    {dummyData.ticketConsultants.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
