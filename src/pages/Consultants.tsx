@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Button } from '../components/ui/button';
 import CreateTravelConsultantForm from '../components/forms/CreateTravelConsultantForm.tsx';
 import CreateTicketConsultantForm from '../components/forms/CreateTicketConsultantForm.tsx';
@@ -7,31 +8,62 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from '../components/ui/dialog';
 
-// Dummy data for consultants
-const consultants = [
-  { id: 1, name: 'Rajiv Kumar', role: 'Travel Consultant', email: 'rajiv.kumar@example.com', status: 'Active' },
-  { id: 2, name: 'Meera Singh', role: 'Ticket Consultant', email: 'meera.singh@example.com', status: 'Active' },
-  { id: 3, name: 'Arun Joshi', role: 'Travel Consultant', email: 'arun.joshi@example.com', status: 'Inactive' },
-];
 
 
 const Consultants = () => {
   const [selectedForm, setSelectedForm] = useState<'travel' | 'ticket'>('travel');
+  const [open, setOpen] = useState(false);
+
+  const [consultants, setConsultants] = useState([]);
+
+
+
+  const fetchUsers = async () => {
+    axios.get(`${import.meta.env.VITE_BASE_URL}/auth/getUser`)
+      .then(res => {
+        const nonAdminUsers = res.data.filter(user => user.role !== 'admin');
+        setConsultants(nonAdminUsers);
+      })
+      .catch(err => console.error(err));
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`${import.meta.env.VITE_BASE_URL}/auth/users/${id}`);
+      alert('User deleted');
+      fetchUsers(); // Refresh list
+    } catch (err) {
+      console.error('Delete failed', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+
+  const handleUserCreated = () => {
+    setOpen(false);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Consultants</h2>
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>Create Role</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Create New Consultant</DialogTitle>
+              <DialogDescription>
+                Fill out the form below to create a new consultant.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex gap-4">
@@ -48,8 +80,12 @@ const Consultants = () => {
                   Ticket Consultant
                 </Button>
               </div>
-              {selectedForm === 'travel' && <CreateTravelConsultantForm />}
-              {selectedForm === 'ticket' && <CreateTicketConsultantForm />}
+              {selectedForm === 'travel' && (
+                <CreateTravelConsultantForm selectedRole={selectedForm} fetchUsers={fetchUsers} onSuccess={handleUserCreated} />
+              )}
+              {selectedForm === 'ticket' && (
+                <CreateTicketConsultantForm selectedRole={selectedForm} fetchUsers={fetchUsers} onSuccess={handleUserCreated} />
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -68,24 +104,22 @@ const Consultants = () => {
               </tr>
             </thead>
             <tbody>
-              {consultants.map((consultant) => (
+              {[...consultants].reverse().map((consultant) => (
                 <tr key={consultant.id} className="border-b border-border">
-                  <td className="px-6 py-4 text-sm">{consultant.name}</td>
+                  <td className="px-6 py-4 text-sm">{consultant.userName}</td>
                   <td className="px-6 py-4 text-sm">{consultant.role}</td>
                   <td className="px-6 py-4 text-sm">{consultant.email}</td>
                   <td className="px-6 py-4 text-sm">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      consultant.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {consultant.status}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${consultant.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      Active
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    <Button variant="ghost" size="sm">Edit</Button>
-                    <Button variant="ghost" size="sm">Delete</Button>
+                    <Button onClick={() => handleDelete(consultant._id)} variant="ghost" size="sm">Delete</Button>
                   </td>
                 </tr>
               ))}
+
             </tbody>
           </table>
         </div>

@@ -1,23 +1,4 @@
-export const USERS = {
-  admin: {
-    email: 'admin@farebulk.com',
-    password: 'admin123',
-    role: 'admin',
-    name: 'Admin User'
-  },
-  travel_consultant: {
-    email: 'travel@farebulk.com',
-    password: 'travel123',
-    role: 'travel_consultant',
-    name: 'Travel Consultant'
-  },
-  ticket_consultant: {
-    email: 'ticket@farebulk.com',
-    password: 'ticket123',
-    role: 'ticket_consultant',
-    name: 'Ticket Consultant'
-  }
-};
+
 
 export const SALES_DATA = [
   {

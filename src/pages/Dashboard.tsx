@@ -15,6 +15,7 @@ const Dashboard = () => {
   const { user, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -53,7 +54,7 @@ const Dashboard = () => {
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">
-                {user.name}
+                {user.userName}
               </span>
               <Button
                 variant="ghost"
@@ -72,7 +73,7 @@ const Dashboard = () => {
             <Route path="sales" element={<SalesOverview />} />
             <Route path="forms" element={
               <div className="space-y-6">
-                {user.role === 'travel_consultant' && (
+                {user.role === 'travel' && (
                   <div className="bg-card shadow sm:rounded-lg">
                     <div className="px-4 py-5 sm:p-6">
                       <h3 className="text-lg font-medium leading-6 text-foreground">Travel Consultant Form</h3>
@@ -86,7 +87,7 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                {user.role === 'ticket_consultant' && (
+                {user.role === 'ticket' && (
                   <div className="bg-card shadow sm:rounded-lg">
                     <div className="px-4 py-5 sm:p-6">
                       <h3 className="text-lg font-medium leading-6 text-foreground">Ticket Consultant Form</h3>

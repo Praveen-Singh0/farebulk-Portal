@@ -1,21 +1,50 @@
 import { useState } from "react";
+import axios from "axios";
+import { toast } from "../ui/use-toast";
 
-const CreateTicketConsultantForm = () => {
-  const [form, setForm] = useState({
-    name: "",
-    dob: "",
-    email: "",
-    password: "",
-  });
+const CreateTicketConsultantForm = ({
+  selectedRole,
+  onSuccess,
+  fetchUsers,
+}: {
+  selectedRole: 'travel' | 'ticket';
+  onSuccess: () => void;
+  fetchUsers: () => void;
+}) => {
+
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Connect to backend API
-    alert(`Ticket Consultant Created:\n${JSON.stringify(form, null, 2)}`);
+
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/register`, {
+        userName: form.name,
+        role: selectedRole,
+        email: form.email,
+        password: form.password,
+      });
+
+      toast({
+        title: "User created successfully",
+        description: `Welcome, ${res.data.user.userName}`,
+        className: "bg-green-500 border border-green-200",
+
+      });
+      onSuccess();
+      setForm({ name: "", email: "", password: "" });
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: "Error creating user",
+        description: error.response?.data?.message || "Something went wrong",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -26,17 +55,6 @@ const CreateTicketConsultantForm = () => {
           type="text"
           name="name"
           value={form.name}
-          onChange={handleChange}
-          required
-          className="w-full border rounded px-3 py-2"
-        />
-      </div>
-      <div>
-        <label className="block font-medium mb-1">Date of Birth</label>
-        <input
-          type="date"
-          name="dob"
-          value={form.dob}
           onChange={handleChange}
           required
           className="w-full border rounded px-3 py-2"
@@ -56,7 +74,7 @@ const CreateTicketConsultantForm = () => {
       <div>
         <label className="block font-medium mb-1">Password</label>
         <input
-          type="password"
+          type="text"
           name="password"
           value={form.password}
           onChange={handleChange}

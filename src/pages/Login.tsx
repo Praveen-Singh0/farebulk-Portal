@@ -6,15 +6,20 @@ import { Label } from '../components/ui/label';
 import { Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+  const { user, login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    login(email, password);
-  };
+  console.log("user from Login", user)
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  await login(email, password);
+};
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#fafbfc] px-2">

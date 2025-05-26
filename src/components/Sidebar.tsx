@@ -14,7 +14,7 @@ import {
 import { Button } from './ui/button';
 
 interface SidebarProps {
-  role: 'admin' | 'travel_consultant' | 'ticket_consultant';
+  role: 'admin' | 'travel' | 'ticket';
 }
 
 const Sidebar = ({ role }: SidebarProps) => {
@@ -48,7 +48,7 @@ const Sidebar = ({ role }: SidebarProps) => {
 
   const menu = role === 'admin' 
     ? adminMenu 
-    : role === 'travel_consultant' 
+    : role === 'travel' 
       ? travelConsultantMenu 
       : ticketConsultantMenu;
 
@@ -58,7 +58,7 @@ const Sidebar = ({ role }: SidebarProps) => {
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-foreground">
             {role === 'admin' ? 'Admin Dashboard' : 
-             role === 'travel_consultant' ? 'Travel Consultant' : 
+             role === 'travel' ? 'Travel Consultant' : 
              'Ticket Consultant'}
           </h2>
           <Button
