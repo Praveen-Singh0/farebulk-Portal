@@ -10,7 +10,8 @@ export const SALES_DATA = [
     phoneNumber: "+1-202-555-0173",
     ticketCostUSD: 520.75,
     mcoUSD: 50.00,
-    status: "Confirmed"
+    status: "Confirmed",
+    consultant: "John",
   },
   {
     date: "2025-05-07",
@@ -21,7 +22,8 @@ export const SALES_DATA = [
     phoneNumber: "+1-202-555-0147",
     ticketCostUSD: 430.00,
     mcoUSD: 35.00,
-    status: "Pending"
+    status: "Pending",
+    consultant: "cyrush"
   },
   {
     date: "2025-05-06",
@@ -32,6 +34,7 @@ export const SALES_DATA = [
     phoneNumber: "+1-202-555-0123",
     ticketCostUSD: 610.25,
     mcoUSD: 45.50,
-    status: "Confirmed"
+    status: "Confirmed",
+    consultant: "debra"
   }
 ]; 

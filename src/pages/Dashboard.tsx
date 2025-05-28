@@ -10,6 +10,7 @@ import { Menu } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import TicketRequest from './TicketRequest';
+import Submission from './Submissions';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -76,12 +77,12 @@ const Dashboard = () => {
                 {user.role === 'travel' && (
                   <div className="bg-card shadow sm:rounded-lg">
                     <div className="px-4 py-5 sm:p-6">
-                      <h3 className="text-lg font-medium leading-6 text-foreground">Travel Consultant Form</h3>
+                      <h3 className="text-lg font-medium leading-6 text-foreground">Create New Sale</h3>
                       <div className="mt-2 max-w-xl text-sm text-muted-foreground">
-                        <p>Submit travel consultant information here.</p>
+                        <p>Please carefully fill out this form.</p>
                       </div>
                       <div className="mt-5">
-                        <TravelConsultantForm />
+                        <TravelConsultantForm user={user} />
                       </div>
                     </div>
                   </div>
@@ -108,7 +109,7 @@ const Dashboard = () => {
             <Route path="my-sales" element={<div>My Sales Page</div>} />
             <Route path="ticket-request" element={<TicketRequest />} />
             <Route path="profile" element={<div>Profile Page</div>} />
-            <Route path="submissions" element={<div>My Submissions Page</div>} />
+            <Route path="submissions" element={<div><Submission/></div>} />
             <Route path="ticket_request" element={<div>Ticket request</div>} />
           </Routes>
         </main>

@@ -40,6 +40,7 @@ export default function Submission() {
   const [filteredRequests, setFilteredRequests] = useState<TicketRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<TicketRequest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const fetchTicketRequests = async () => {
     try {
@@ -51,7 +52,7 @@ export default function Submission() {
         setLoading(false);
         return;
       }
-      
+
       const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/ticket-requests`, {
         withCredentials: true
       });
@@ -61,7 +62,7 @@ export default function Submission() {
       // Filter tickets based on user email
       const userTickets = response.data.filter((ticket: TicketRequest) => {
         // For admin role, show all tickets
-        if (user.role === 'ticket') {
+        if (user.role === 'admin') {
           return true;
         }
 
@@ -116,12 +117,11 @@ export default function Submission() {
     }
   };
 
-
-
+  // Mask card number
   const maskCardNumber = (cardNumber?: string) => {
-  if (!cardNumber) return "N/A";
-  return cardNumber.replace(/(.{4})/g, "$1 ").trim();
-};
+    if (!cardNumber) return "N/A";
+    return `****-****-****-${cardNumber.slice(-4)}`;
+  };
 
   // Format currency
   const formatCurrency = (amount: string) => {
@@ -135,19 +135,23 @@ export default function Submission() {
   // Handle view details
   const handleViewDetails = (request: TicketRequest) => {
     setSelectedRequest(request);
+    setIsEditMode(false);
     setIsModalOpen(true);
   };
 
+  // Handle edit
+  // const handleEdit = (request: TicketRequest) => {
+  //   setSelectedRequest(request);
+  //   setIsEditMode(true);
+  //   setIsModalOpen(true);
+  // };
 
   // Close modal
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedRequest(null);
+    setIsEditMode(false);
   };
-
-  const handleNext = () =>{
-    
-  }
 
   // Loading state
   if (loading) {
@@ -214,7 +218,9 @@ export default function Submission() {
               : `View your ticket requests (${ticketRequests.length} total)`
             }
           </p>
-
+          <p className="text-sm text-gray-500 mt-1">
+            Logged in as: {user.userName || user.email}
+          </p>
         </div>
         <button
           onClick={fetchTicketRequests}
@@ -250,13 +256,11 @@ export default function Submission() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left p-3 font-semibold text-gray-700">Consultant</th>
                   <th className="text-left p-3 font-semibold text-gray-700">Passenger</th>
                   <th className="text-left p-3 font-semibold text-gray-700">Ticket Type</th>
                   <th className="text-left p-3 font-semibold text-gray-700">Confirmation Code</th>
                   <th className="text-left p-3 font-semibold text-gray-700">Cost</th>
                   <th className="text-left p-3 font-semibold text-gray-700">Submitted</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Status</th>
                   <th className="text-right p-3 font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
@@ -275,12 +279,6 @@ export default function Submission() {
                 ) : (
                   filteredRequests.map((request) => (
                     <tr key={request._id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="p-3">
-                        <div className="font-medium text-gray-900">{request.consultant}</div>
-                      </td>
-
-
-
                       <td className="p-3">
                         <div className="font-medium text-gray-900">{request.passengerName}</div>
                         <div className="text-sm text-gray-500">{request.passengerEmail}</div>
@@ -318,11 +316,6 @@ export default function Submission() {
                           {formatDate(request.createdAt)}
                         </div>
                       </td>
-                      <td className="p-3">
-                        <div className="inline-block bg-yellow-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                          {request.status ? request.status : "No Status"}
-                        </div>
-                      </td>
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
@@ -332,6 +325,13 @@ export default function Submission() {
                           >
                             <Eye className="h-4 w-4 text-gray-600" />
                           </button>
+                          {/* <button 
+                            onClick={() => handleEdit(request)}
+                            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                            title="Edit"
+                          >
+                            <Edit className="h-4 w-4 text-gray-600" />
+                          </button> */}
                         </div>
                       </td>
                     </tr>
@@ -344,13 +344,13 @@ export default function Submission() {
       </div>
 
       {/* Modal - Keep the same modal code from previous response */}
-      {isModalOpen && selectedRequest && (        
+      {isModalOpen && selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-xl font-semibold text-gray-900">
-                {'Ticket Request Details'}
+                {isEditMode ? 'Edit Ticket Request' : 'Ticket Request Details'}
               </h3>
               <button
                 onClick={closeModal}
@@ -358,7 +358,7 @@ export default function Submission() {
               >
                 <X className="h-5 w-5 text-gray-500" />
               </button>
-            </div>            
+            </div>
 
             {/* Modal Content - Same as before */}
             <div className="p-6">
@@ -445,12 +445,6 @@ export default function Submission() {
                       <p className="text-sm text-gray-900">{selectedRequest.expiryDate}</p>
                     </div>
                   )}
-                  {selectedRequest.cvv && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
-                      <p className="text-sm text-gray-900">{selectedRequest.cvv}</p>
-                    </div>
-                  )}
                 </div>
 
                 {/* Booking Information */}
@@ -500,11 +494,23 @@ export default function Submission() {
             {/* Modal Footer */}
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
               <button
-                onClick={handleNext}
+                onClick={closeModal}
                 className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
-                Next
+                Close
               </button>
+              {isEditMode && (
+                <button
+                  onClick={() => {
+                    // Add your edit logic here
+                    console.log('Edit request:', selectedRequest);
+                    closeModal();
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Save Changes
+                </button>
+              )}
             </div>
           </div>
         </div>

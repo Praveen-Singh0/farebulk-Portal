@@ -48,19 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Optionally navigate based on role:
         // (Uncomment this only if you want auto-redirect on refresh)
 
-        switch (role) {
-          case 'admin':
-            navigate('/dashboard/overview');
-            break;
-          case 'travel':
-            navigate('/dashboard/overview/traval');
-            break;
-          case 'ticket':
-            navigate('/dashboard/overview/ticket');
-            break;
-          default:
-            navigate('/login');
+        if (['admin', 'travel', 'ticket'].includes(role)) {
+          navigate('/dashboard/overview');
+        } else {
+          navigate('/login');
         }
+
 
 
       } catch (err) {
@@ -104,19 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser({ email: userEmail, role, userName });
 
-      switch (role) {
-        case 'admin':
+       if (['admin', 'travel', 'ticket'].includes(role)) {
           navigate('/dashboard/overview');
-          break;
-        case 'travel':
-          navigate('/dashboard/overview/traval');
-          break;
-        case 'ticket':
-          navigate('/dashboard/overview/ticket');
-          break;
-        default:
+        } else {
           navigate('/login');
-      }
+        }
 
       toast({
         title: 'Login Successful',

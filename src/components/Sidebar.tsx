@@ -42,7 +42,6 @@ const Sidebar = ({ role }: SidebarProps) => {
     { name: 'Ticket Request', path: '/dashboard/ticket-request', icon: ShoppingCart },
 
     { name: 'My Sales', path: '/dashboard/my-sales', icon: BarChart3 },
-    { name: 'My Submissions', path: '/dashboard/submissions', icon: ClipboardList },
     { name: 'My Profile', path: '/dashboard/profile', icon: User },
   ];
 
