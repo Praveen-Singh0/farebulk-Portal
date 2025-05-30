@@ -27,7 +27,7 @@ interface TravelConsultantFormData {
   status: string;
 }
 
-const TravelConsultantForm = ({ user }: { user: { email: string; role: string; userName: string } }) => {
+const TravelConsultantForm = ({ user }: { user: { email: string; role: string; userName?: string } }) => {
   const { toast } = useToast();
 
   const navigate = useNavigate();
@@ -174,7 +174,7 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
     return true;
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!validateForm()) {

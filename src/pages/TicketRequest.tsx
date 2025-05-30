@@ -13,7 +13,8 @@ interface TicketRequest {
   phoneNumber: string;
   confirmationCode: string;
   ticketCost: string;
-  mco?: string;
+  status: string;
+  mco: string;
   paymentMethod?: string;
   cardholderName?: string;
   cardNumber?: string;
@@ -191,7 +192,6 @@ export default function Submission() {
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      console.error('Error response:', error.response?.data);
       alert('Error updating status. Please try again.');
     } finally {
       setIsSubmitting(false);

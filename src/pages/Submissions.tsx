@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, RefreshCw, Eye, Edit, X } from "lucide-react";
+import { Search, RefreshCw, Eye, X } from "lucide-react";
 import { format } from "date-fns";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
@@ -13,7 +13,8 @@ interface TicketRequest {
   phoneNumber: string;
   confirmationCode: string;
   ticketCost: string;
-  mco?: string;
+  status: string;
+  mco: string;
   paymentMethod?: string;
   cardholderName?: string;
   cardNumber?: string;
@@ -59,6 +60,7 @@ export default function Submission() {
       console.log("Fetched data:", response.data);
 
       // Filter tickets based on user email
+
       const userTickets = response.data.filter((ticket: TicketRequest) => {
         if (user.role === 'admin') {
           return true;
@@ -74,7 +76,8 @@ export default function Submission() {
       console.log("Filtered tickets for user:", userTickets);
 
       // Further filter tickets with status === 'Pending'
-      const pendingTickets = userTickets.filter(ticket => ticket.status === "Pending");
+      const pendingTickets = userTickets.filter((ticket: TicketRequest) => ticket.status === "Pending");
+
 
       setTicketRequests(pendingTickets); // all user tickets
       setFilteredRequests(pendingTickets); // only pending

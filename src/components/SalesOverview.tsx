@@ -13,6 +13,7 @@ type TicketRequestStatus = {
     passengerName: string;
     passengerEmail: string;
     ticketType: string;
+    requestFor:string;
     confirmationCode: string;
     ticketCost: string;
     mco: string;

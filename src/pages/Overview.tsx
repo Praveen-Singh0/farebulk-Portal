@@ -4,9 +4,66 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 
+// Define types
+interface SaleData {
+  id: number;
+  client: string;
+  destination: string;
+  amount: number;
+  date: string;
+  status: string;
+}
+
+interface TicketRequest {
+  consultant?: string;
+  passengerName?: string;
+  passengerEmail?: string;
+  ticketType?: string;
+  requestFor?: string;
+  confirmationCode?: string;
+  mco?: string;
+}
+
+interface SalesDataItem {
+  _id: string;
+  status: string;
+  paymentMethod?: string;
+  createdAt: string;
+  updatedAt: string;
+  updatedBy?: string;
+  ticketRequest?: TicketRequest;
+}
+
+interface ChartData {
+  month?: string;
+  day?: string;
+  week?: string;
+  sales: number;
+}
+
+interface PaymentMethodData {
+  name: string;
+  value: number;
+}
+
+interface ProcessedMetrics {
+  totalSales: number;
+  totalMCO: number;
+  totalBookings: number;
+  averageTicketCost: number;
+  paymentMethods: PaymentMethodData[];
+  monthlySales: ChartData[];
+  chargedSales: SalesDataItem[];
+}
+
+interface ChartConfig {
+  data: ChartData[];
+  dataKey: string;
+  fill: string;
+}
+
 // Travel consultant dummy data (keeping for non-admin roles)
-// My personal sales data for travel consultant
-const myPersonalSales = [
+const myPersonalSales: SaleData[] = [
   { id: 1, client: 'John Smith', destination: 'Dubai', amount: 0, date: '2025-05-25', status: 'Confirmed' },
   { id: 2, client: 'Sarah Johnson', destination: 'London', amount: 0, date: '2025-05-24', status: 'Pending' },
   { id: 3, client: 'Mike Brown', destination: 'Tokyo', amount: 0, date: '2025-05-23', status: 'Confirmed' },
@@ -14,8 +71,7 @@ const myPersonalSales = [
   { id: 5, client: 'David Wilson', destination: 'New York', amount: 0, date: '2025-05-21', status: 'Cancelled' },
 ];
 
-
-// Admin dummy data (your existing data)
+// Admin dummy data
 const adminDummyData = {
   monthlySales: [
     { month: 'May 2024', sales: 35000 },
@@ -50,7 +106,7 @@ const adminDummyData = {
   paymentMethods: [
     { name: 'Stripe UK', value: 45 },
     { name: 'Stripe India', value: 30 },
-    { name: 'Authorize US', value: 25 },
+    { name: 'Authorize US', value: 25 },
   ],
   salesTrend: [
     { name: 'Jan', online: 4000, offline: 2400 },
@@ -66,7 +122,6 @@ const adminDummyData = {
     { name: 'West', value: 14200 },
   ]
 };
-
 
 const travelConsultantData = {
   monthlySales: [
@@ -129,12 +184,12 @@ const cardColors = [
 // Pie chart colors
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
-const Overview = () => {
+const Overview: React.FC = () => {
   const { user } = useAuth();
-  const [timeFrame, setTimeFrame] = useState('daily');
-  const [salesData, setSalesData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [timeFrame, setTimeFrame] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [salesData, setSalesData] = useState<SalesDataItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const isAdmin = user?.role === 'admin';
   const isTravelConsultant = user?.role === 'travel';
@@ -142,7 +197,7 @@ const Overview = () => {
 
   // Fetch sales data from API
   useEffect(() => {
-    const fetchSalesData = async () => {
+    const fetchSalesData = async (): Promise<void> => {
       if (!isAdmin) {
         setLoading(false);
         return;
@@ -168,19 +223,19 @@ const Overview = () => {
   }, [isAdmin]);
 
   // Helper functions for calculations
-  const calculateDeduction = (mco) => {
+  const calculateDeduction = (mco?: string): number => {
     const mcoAmount = parseFloat(mco || '0') || 0;
     return mcoAmount * 0.15;
   };
 
-  const calculateSale = (mco) => {
+  const calculateSale = (mco?: string): number => {
     const mcoAmount = parseFloat(mco || '0') || 0;
     const deduction = calculateDeduction(mco);
     return mcoAmount - deduction;
   };
 
   // Process sales data for dashboard metrics
-  const processedData = () => {
+  const processedData = (): ProcessedMetrics | null => {
     if (!salesData.length) return null;
 
     // Filter only "Charge" status entries
@@ -201,7 +256,7 @@ const Overview = () => {
     const averageTicketCost = totalBookings > 0 ? totalSales / totalBookings : 0;
 
     // Payment method distribution
-    const paymentMethodCounts = {};
+    const paymentMethodCounts: Record<string, number> = {};
     chargedSales.forEach(item => {
       const method = item.paymentMethod || 'Unknown';
       paymentMethodCounts[method] = (paymentMethodCounts[method] || 0) + 1;
@@ -213,7 +268,7 @@ const Overview = () => {
     }));
 
     // Generate monthly sales data based on createdAt dates
-    const monthlySales = {};
+    const monthlySales: Record<string, number> = {};
     chargedSales.forEach(item => {
       const date = new Date(item.createdAt);
       const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -239,14 +294,14 @@ const Overview = () => {
 
   const metrics = processedData();
 
-  // Generate chart data based on timeframe and this getChartData only return data when user.role === 'admin' ok
-  const getChartData = () => {
+  // Generate chart data based on timeframe
+  const getChartData = (): ChartConfig => {
     if (!metrics) return { data: [], dataKey: 'month', fill: '#8884d8' };
 
     switch (timeFrame) {
       case 'daily':
         // Generate last 7 days data
-        const dailyData = [];
+        const dailyData: ChartData[] = [];
         for (let i = 6; i >= 0; i--) {
           const date = new Date();
           date.setDate(date.getDate() - i);
@@ -263,7 +318,7 @@ const Overview = () => {
 
       case 'weekly':
         // Generate last 4 weeks data
-        const weeklyData = [];
+        const weeklyData: ChartData[] = [];
         for (let i = 3; i >= 0; i--) {
           const weekStart = new Date();
           weekStart.setDate(weekStart.getDate() - (i * 7));
@@ -290,7 +345,7 @@ const Overview = () => {
   const chartConfig = getChartData();
 
   // Recent Sales Component
-  const RecentSales = () => {
+  const RecentSales: React.FC = () => {
     if (!salesData || salesData.length === 0) {
       return (
         <Card className="col-span-full">
@@ -330,7 +385,7 @@ const Overview = () => {
                 </tr>
               </thead>
               <tbody>
-                {recentSales.map((item, index) => (
+                {recentSales.map((item) => (
                   <tr key={item._id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="p-3">
                       <div>
@@ -361,7 +416,6 @@ const Overview = () => {
                             ${calculateSale(item.ticketRequest?.mco).toFixed(2)}
                           </div>
                         )}
-
                         <div className="text-sm text-gray-500">
                           MCO: ${item.ticketRequest?.mco || '0.00'}
                         </div>
@@ -412,8 +466,8 @@ const Overview = () => {
       );
     }
 
-    // Handle case when no data but still show UI with ₹00.00 for cards and empty charts
-    const displayMetrics = metrics || {
+    // Handle case when no data but still show UI with $0.00 for cards and empty charts
+    const displayMetrics: ProcessedMetrics = metrics || {
       totalSales: 0,
       totalMCO: 0,
       totalBookings: 0,
@@ -424,10 +478,10 @@ const Overview = () => {
     };
 
     // Generate empty chart data when no metrics
-    const getEmptyChartData = () => {
+    const getEmptyChartData = (): ChartConfig => {
       switch (timeFrame) {
         case 'daily':
-          const emptyDailyData = [];
+          const emptyDailyData: ChartData[] = [];
           for (let i = 6; i >= 0; i--) {
             const date = new Date();
             date.setDate(date.getDate() - i);
@@ -437,7 +491,7 @@ const Overview = () => {
           return { data: emptyDailyData, dataKey: 'day', fill: '#8884d8' };
 
         case 'weekly':
-          const emptyWeeklyData = [];
+          const emptyWeeklyData: ChartData[] = [];
           for (let i = 3; i >= 0; i--) {
             emptyWeeklyData.push({ week: `Week ${4 - i}`, sales: 0 });
           }
@@ -445,7 +499,7 @@ const Overview = () => {
 
         case 'monthly':
         default:
-          const emptyMonthlyData = [];
+          const emptyMonthlyData: ChartData[] = [];
           for (let i = 11; i >= 0; i--) {
             const date = new Date();
             date.setMonth(date.getMonth() - i);
@@ -474,7 +528,7 @@ const Overview = () => {
             },
             {
               title: "Total Bookings",
-              value: displayMetrics.totalBookings,
+              value: displayMetrics.totalBookings.toString(),
               colorIndex: 2
             },
             {
@@ -547,12 +601,12 @@ const Overview = () => {
                         axisLine={false}
                       />
                       <YAxis
-                        tickFormatter={(value) => `$${value.toLocaleString()}`}
+                        tickFormatter={(value: number) => `$${value.toLocaleString()}`}
                         tickLine={false}
                         axisLine={false}
                         tickCount={5}
                       />
-                      <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Sales']} />
+                      <Tooltip formatter={(value: number) => [`$${value.toLocaleString()}`, 'Sales']} />
                       <Bar
                         dataKey="sales"
                         fill={finalChartConfig.fill}
@@ -583,13 +637,13 @@ const Overview = () => {
                         outerRadius={100}
                         fill="#8884d8"
                         dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       >
                         {displayMetrics.paymentMethods.map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+                      <Tooltip formatter={(value: number) => [`${value}%`, 'Percentage']} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
@@ -615,7 +669,8 @@ const Overview = () => {
           </Card>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        {/* Performance vs Target & Client Types */}
+        <div className="grid gap-6 md:grid-cols-1">
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl font-bold">Performance vs Target</CardTitle>
@@ -637,34 +692,11 @@ const Overview = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold">Regional Sales Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={adminDummyData.regionSales}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis tickFormatter={(value) => `$${value}`} />
-                    <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
-                    <Area type="monotone" dataKey="value" stroke="#8884d8" fill="url(#colorValue)" />
-                    <defs>
-                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     );
   }
+
 
   // Travel Consultant Dashboard
   if (isTravelConsultant) {
@@ -737,7 +769,7 @@ const Overview = () => {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="p-2 text-center" colSpan="5">
+                    <td className="p-2 text-center">
                     </td>
                   </tr>
                 </tbody>
@@ -808,7 +840,7 @@ const Overview = () => {
         </div>
 
         {/* Performance vs Target & Client Types */}
-        <div className="grid gap-6 md:grid-cols-1">
+        <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl font-bold">Performance vs Target</CardTitle>
@@ -829,7 +861,30 @@ const Overview = () => {
               </div>
             </CardContent>
           </Card>
-
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold">Regional Sales Performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={adminDummyData.regionSales}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis tickFormatter={(value) => `$${value}`} />
+                    <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
+                    <Area type="monotone" dataKey="value" stroke="#8884d8" fill="url(#colorValue)" />
+                    <defs>
+                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

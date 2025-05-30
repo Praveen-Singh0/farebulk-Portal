@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Button } from '../components/ui/button';
-import CreateTravelConsultantForm from '../components/forms/CreateTravelConsultantForm.tsx';
-import CreateTicketConsultantForm from '../components/forms/CreateTicketConsultantForm.tsx';
+import CreateTravelConsultantForm from '../components/forms/CreateTravelConsultantForm';
+import CreateTicketConsultantForm from '../components/forms/CreateTicketConsultantForm';
 import {
   Dialog,
   DialogContent,
@@ -12,26 +12,35 @@ import {
   DialogTrigger,
 } from '../components/ui/dialog';
 
-
+// Define the User type here (adjust fields as needed)
+interface User {
+  _id: string;        
+  id?: string;        
+  userName: string;
+  role: string;
+  email: string;
+  status: string;
+}
 
 const Consultants = () => {
   const [selectedForm, setSelectedForm] = useState<'travel' | 'ticket'>('travel');
   const [open, setOpen] = useState(false);
 
-  const [consultants, setConsultants] = useState([]);
-
-
+  // Use User[] type for consultants
+  const [consultants, setConsultants] = useState<User[]>([]);
 
   const fetchUsers = async () => {
-    axios.get(`${import.meta.env.VITE_BASE_URL}/auth/getUser`)
-      .then(res => {
-        const nonAdminUsers = res.data.filter(user => user.role !== 'admin');
-        setConsultants(nonAdminUsers);
-      })
-      .catch(err => console.error(err));
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_BASE_URL}/auth/getUser`);
+      // Use User type here for the filter callback parameter
+      const nonAdminUsers = res.data.filter((user: User) => user.role !== 'admin');
+      setConsultants(nonAdminUsers);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     try {
       await axios.delete(`${import.meta.env.VITE_BASE_URL}/auth/users/${id}`);
       alert('User deleted');
@@ -44,7 +53,6 @@ const Consultants = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
-
 
   const handleUserCreated = () => {
     setOpen(false);
@@ -81,10 +89,18 @@ const Consultants = () => {
                 </Button>
               </div>
               {selectedForm === 'travel' && (
-                <CreateTravelConsultantForm selectedRole={selectedForm} fetchUsers={fetchUsers} onSuccess={handleUserCreated} />
+                <CreateTravelConsultantForm
+                  selectedRole={selectedForm}
+                  fetchUsers={fetchUsers}
+                  onSuccess={handleUserCreated}
+                />
               )}
               {selectedForm === 'ticket' && (
-                <CreateTicketConsultantForm selectedRole={selectedForm} fetchUsers={fetchUsers} onSuccess={handleUserCreated} />
+                <CreateTicketConsultantForm
+                  selectedRole={selectedForm}
+                  fetchUsers={fetchUsers}
+                  onSuccess={handleUserCreated}
+                />
               )}
             </div>
           </DialogContent>
@@ -105,21 +121,30 @@ const Consultants = () => {
             </thead>
             <tbody>
               {[...consultants].reverse().map((consultant) => (
-                <tr key={consultant.id} className="border-b border-border">
+                <tr key={consultant._id} className="border-b border-border">
                   <td className="px-6 py-4 text-sm">{consultant.userName}</td>
                   <td className="px-6 py-4 text-sm">{consultant.role}</td>
                   <td className="px-6 py-4 text-sm">{consultant.email}</td>
                   <td className="px-6 py-4 text-sm">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${consultant.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        'bg-green-100 text-green-800'
+                      }`}
+                    >
                       Active
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    <Button onClick={() => handleDelete(consultant._id)} variant="ghost" size="sm">Delete</Button>
+                    <Button
+                      onClick={() => handleDelete(consultant._id)}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      Delete
+                    </Button>
                   </td>
                 </tr>
               ))}
-
             </tbody>
           </table>
         </div>
@@ -128,4 +153,4 @@ const Consultants = () => {
   );
 };
 
-export default Consultants; 
+export default Consultants;

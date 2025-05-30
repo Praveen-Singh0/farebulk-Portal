@@ -71,8 +71,7 @@ export default function MySale() {
         // Default logic for other users
         userStatuses = userStatuses.filter((status: TicketRequestStatus) =>
           status.updatedBy === user.email ||
-          status.updatedBy === user.userName ||
-          status.updatedBy === user.id
+          status.updatedBy === user.userName
         );
       }
 
