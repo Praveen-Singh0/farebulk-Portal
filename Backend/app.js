@@ -18,11 +18,16 @@ const app = express();
 
 app.use(cookieParser());
 
-// Middleware
-app.use(cors({
+
+const corsOptions = {
   origin: 'https://crm.farebulk.com',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-}));
+};
+
+app.use(cors(corsOptions));
+
 
 
 app.use(express.json());
