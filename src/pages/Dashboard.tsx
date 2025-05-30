@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import TravelConsultantForm from '../components/forms/TravelConsultantForm';
-import TicketConsultantForm from '../components/forms/TicketConsultantForm';
 import Overview from './Overview';
 import SalesOverview from '../components/SalesOverview';
 import Sidebar from '../components/Sidebar';
@@ -11,6 +10,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import TicketRequest from './TicketRequest';
 import Submission from './Submissions';
+import MySale from './mySale';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -87,30 +87,15 @@ const Dashboard = () => {
                     </div>
                   </div>
                 )}
-
-                {user.role === 'ticket' && (
-                  <div className="bg-card shadow sm:rounded-lg">
-                    <div className="px-4 py-5 sm:p-6">
-                      <h3 className="text-lg font-medium leading-6 text-foreground">Ticket Consultant Form</h3>
-                      <div className="mt-2 max-w-xl text-sm text-muted-foreground">
-                        <p>Submit ticket consultant information here.</p>
-                      </div>
-                      <div className="mt-5">
-                        <TicketConsultantForm />
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             } />
-            <Route path="reports" element={<div>Reports Page</div>} />
+            <Route path="reports" element={<div>Comming Soon</div>} />
             <Route path="consultants" element={<Consultants />} />
-            <Route path="settings" element={<div>Settings Page</div>} />
-            <Route path="my-sales" element={<div>My Sales Page</div>} />
+            <Route path="settings" element={<div>Comming Soon</div>} />
+            <Route path="my-sales" element={<div><MySale/></div>} />
             <Route path="ticket-request" element={<TicketRequest />} />
-            <Route path="profile" element={<div>Profile Page</div>} />
+            <Route path="profile" element={<div>Comming Soon</div>} />
             <Route path="submissions" element={<div><Submission/></div>} />
-            <Route path="ticket_request" element={<div>Ticket request</div>} />
           </Routes>
         </main>
       </div>

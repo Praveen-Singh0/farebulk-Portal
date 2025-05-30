@@ -11,6 +11,8 @@ const itemRoutes = require('./routes/itemRoutes');
 const authRoutes = require('./routes/authRoutes');
 
 const ticketRequestRoutes = require('./routes/ticketRequest');
+const ticketRequestStatusRoutes = require('./routes/ticketRequestStatusRoutes');
+
 
 const app = express();
 
@@ -27,6 +29,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/ticket-requests', ticketRequestRoutes);
+app.use('/api/ticket-requests-status', ticketRequestStatusRoutes);
 app.use('/api/items', itemRoutes);
 
 app.get('/api/dashboard', verifyUser, async (req, res) => {

@@ -38,9 +38,7 @@ const Sidebar = ({ role }: SidebarProps) => {
 
   const ticketConsultantMenu = [
     { name: 'Dashboard', path: '/dashboard/overview', icon: LayoutDashboard },
-    { name: 'Add Sale', path: '/dashboard/forms', icon: ShoppingCart },
     { name: 'Ticket Request', path: '/dashboard/ticket-request', icon: ShoppingCart },
-
     { name: 'My Sales', path: '/dashboard/my-sales', icon: BarChart3 },
     { name: 'My Profile', path: '/dashboard/profile', icon: User },
   ];

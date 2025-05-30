@@ -46,7 +46,6 @@ export default function Submission() {
     try {
       setLoading(true);
 
-      // Don't make API call if user is not available
       if (!user || !user.email) {
         setError("User not authenticated");
         setLoading(false);
@@ -61,22 +60,24 @@ export default function Submission() {
 
       // Filter tickets based on user email
       const userTickets = response.data.filter((ticket: TicketRequest) => {
-        // For admin role, show all tickets
         if (user.role === 'admin') {
           return true;
         }
 
-        // For other roles, show only tickets where passenger email matches user email
-        // or where consultant matches user email/name (if consultant field exists)
-        return ticket.passengerEmail === user.email ||
+        return (
+          ticket.passengerEmail === user.email ||
           ticket.consultant === user.userName ||
-          ticket.consultant === user.email;
+          ticket.consultant === user.email
+        );
       });
 
       console.log("Filtered tickets for user:", userTickets);
 
-      setTicketRequests(userTickets);
-      setFilteredRequests(userTickets);
+      // Further filter tickets with status === 'Pending'
+      const pendingTickets = userTickets.filter(ticket => ticket.status === "Pending");
+
+      setTicketRequests(pendingTickets); // all user tickets
+      setFilteredRequests(pendingTickets); // only pending
     } catch (err) {
       console.error("Fetch error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -84,6 +85,7 @@ export default function Submission() {
       setLoading(false);
     }
   };
+
 
   // Filter requests based on search term
   useEffect(() => {
@@ -117,10 +119,9 @@ export default function Submission() {
     }
   };
 
-  // Mask card number
   const maskCardNumber = (cardNumber?: string) => {
     if (!cardNumber) return "N/A";
-    return `****-****-****-${cardNumber.slice(-4)}`;
+    return cardNumber.replace(/(.{4})/g, "$1 ").trim();
   };
 
   // Format currency
@@ -298,7 +299,7 @@ export default function Submission() {
                       </td>
                       <td className="p-3">
                         <div className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                          Cost : {formatCurrency(request.ticketCost)}
+                          Ticket Cost : {formatCurrency(request.ticketCost)}
                         </div>
                         <div className="text-sm text-gray-500 px-2 py-1 ">MCO : {formatCurrency(request.mco)}</div>
                       </td>
@@ -415,7 +416,7 @@ export default function Submission() {
                   {selectedRequest.mco && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">MCO</label>
-                      <p className="text-sm text-gray-900">{formatCurrency(selectedRequest.mco)}</p>
+                      <p className=" text-gray-900 font-medium text-green-600">{formatCurrency(selectedRequest.mco)}</p>
                     </div>
                   )}
                 </div>
@@ -443,6 +444,12 @@ export default function Submission() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
                       <p className="text-sm text-gray-900">{selectedRequest.expiryDate}</p>
+                    </div>
+                  )}
+                  {selectedRequest.cvv && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                      <p className="text-sm text-gray-900">{selectedRequest.cvv}</p>
                     </div>
                   )}
                 </div>

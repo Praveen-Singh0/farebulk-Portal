@@ -1,35 +1,113 @@
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import SalesList from '../components/SalesList';
-const dummyData = {
-  travelConsultants: [
-    { name: 'Amit Sharma', sales: 45000 },
-    { name: 'Priya Verma', sales: 38000 },
-    { name: 'Rohit Mehra', sales: 29000 },
-    { name: 'Sneha Kapoor', sales: 42000 },
-  ],
-  ticketConsultants: [
-    { name: 'Vikram Desai', sales: 32000 },
-    { name: 'Anjali Nair', sales: 28000 },
-    { name: 'Karan Malhotra', sales: 35000 },
-    { name: 'Neha Iyer', sales: 31000 },
-  ],
-  
-  monthlySales: [
-    { month: 'Jan', travel: 120000, ticket: 95000 },
-    { month: 'Feb', travel: 135000, ticket: 110000 },
-    { month: 'Mar', travel: 150000, ticket: 125000 },
-    { month: 'Apr', travel: 140000, ticket: 115000 },
-    { month: 'May', travel: 160000, ticket: 130000 },
-    { month: 'Jun', travel: 170000, ticket: 140000 },
-  ],
-};
+import axios from 'axios';
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PieChart, Pie, Tooltip, Cell, Legend, ResponsiveContainer } from 'recharts';
+import SalesList from './SalesList';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
+
+type TicketRequestStatus = {
+  ticketRequest: {
+    consultant: string;
+    passengerName: string;
+    passengerEmail: string;
+    ticketType: string;
+    confirmationCode: string;
+    ticketCost: string;
+    mco: string;
+  };
+  status: string;
+  paymentMethod: string;
+  updatedBy: string;
+  updatedAt: string;
+};
+
+type SaleData = {
+  consultant: string;
+  passengerName: string;
+  passengerEmail: string;
+  ticketType: string;
+  confirmationCode: string;
+  ticketCostUSD: number;
+  requestFor: string;
+  mcoUSD: number;
+  saleAmount: number;
+  status: string;
+  paymentMethod: string;
+  updatedBy: string;
+  updatedAt: string;
+};
+
+type ConsultantSale = {
+  name: string;
+  sales: number;
+};
+
 const SalesOverview = () => {
-  const totalTravelSales = dummyData.travelConsultants.reduce((sum, item) => sum + item.sales, 0);
-  const totalTicketSales = dummyData.ticketConsultants.reduce((sum, item) => sum + item.sales, 0);
+  const [salesData, setSalesData] = useState<SaleData[]>([]);
+  const [consultantSales, setConsultantSales] = useState<ConsultantSale[]>([]);
+  const [totalSales, setTotalSales] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchSalesData = async () => {
+      try {
+        const response = await axios.get<{ data: TicketRequestStatus[] }>(
+          `${import.meta.env.VITE_BASE_URL}/ticket-requests-status`,
+          { withCredentials: true }
+        );
+
+        const processed: SaleData[] = response.data.data.map((item) => {
+          const mco = parseFloat(item.ticketRequest.mco);
+          const saleAmount = mco * 0.85;
+          return {
+            consultant: item.ticketRequest.consultant,
+            passengerName: item.ticketRequest.passengerName,
+            passengerEmail: item.ticketRequest.passengerEmail,
+            ticketType: item.ticketRequest.ticketType,
+            confirmationCode: item.ticketRequest.confirmationCode,
+            ticketCostUSD: parseFloat(item.ticketRequest.ticketCost),
+            requestFor: item.ticketRequest.requestFor,
+            mcoUSD: mco,
+            saleAmount,
+            status: item.status,
+            paymentMethod: item.paymentMethod,
+            updatedBy: item.updatedBy,
+            updatedAt: item.updatedAt,
+          };
+        });
+
+        setSalesData(processed);
+
+        // Total only for items with status === "Charge"
+        const total = processed.reduce((sum, item) => {
+          if (item.status === "Charge") {
+            return sum + item.saleAmount;
+          }
+          return sum;
+        }, 0);
+        setTotalSales(total);
+
+        const consultantMap: Record<string, number> = {};
+        processed
+          .filter((item) => item.status === "Charge")
+          .forEach((item) => {
+            consultantMap[item.consultant] = (consultantMap[item.consultant] || 0) + item.saleAmount;
+          });
+
+        const consultantArray = Object.entries(consultantMap).map(([name, sales]) => ({
+          name,
+          sales,
+        }));
+
+        setConsultantSales(consultantArray);
+      } catch (error) {
+        console.error('Error fetching sales data:', error);
+      }
+    };
+
+    fetchSalesData();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -39,76 +117,54 @@ const SalesOverview = () => {
             <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${(totalTravelSales + totalTicketSales).toLocaleString()}</div>
+            <div className="text-2xl font-bold">${totalSales.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">+20.1% from last month</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Travel Sales</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalTravelSales.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+15.2% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ticket Sales</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalTicketSales.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+12.5% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Consultants</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground">+2 new this month</p>
+            <div className="text-2xl font-bold">{salesData.filter(item => item.status === "Charge").length}</div>
+            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-1">
-        <Card>
-          <CardHeader>
-            <CardTitle>Travel Consultant Sales</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={dummyData.travelConsultants}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    paddingAngle={5}
-                    dataKey="sales"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {dummyData.travelConsultants.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Consultant Sales Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={consultantSales}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="sales"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {consultantSales.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
-      </div>
-
-      <SalesList/>
+      <SalesList saleData={salesData} />
     </div>
   );
 };
 
-export default SalesOverview; 
+export default SalesOverview;

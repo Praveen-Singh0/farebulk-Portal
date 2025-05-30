@@ -1,9 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area } from 'recharts';
-import { SALES_DATA } from '../constants/auth';
-import SalesList from '../components/SalesList';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
+
+// Travel consultant dummy data (keeping for non-admin roles)
+// My personal sales data for travel consultant
+const myPersonalSales = [
+  { id: 1, client: 'John Smith', destination: 'Dubai', amount: 0, date: '2025-05-25', status: 'Confirmed' },
+  { id: 2, client: 'Sarah Johnson', destination: 'London', amount: 0, date: '2025-05-24', status: 'Pending' },
+  { id: 3, client: 'Mike Brown', destination: 'Tokyo', amount: 0, date: '2025-05-23', status: 'Confirmed' },
+  { id: 4, client: 'Emma Davis', destination: 'Paris', amount: 0, date: '2025-05-22', status: 'Confirmed' },
+  { id: 5, client: 'David Wilson', destination: 'New York', amount: 0, date: '2025-05-21', status: 'Cancelled' },
+];
+
 
 // Admin dummy data (your existing data)
 const adminDummyData = {
@@ -37,10 +47,10 @@ const adminDummyData = {
     { day: 'Sat', sales: 5500 },
     { day: 'Sun', sales: 4000 },
   ],
-  categoryData: [
-    { name: 'Economy', value: 45 },
-    { name: 'Business', value: 30 },
-    { name: 'First Class', value: 25 },
+  paymentMethods: [
+    { name: 'Stripe UK', value: 45 },
+    { name: 'Stripe India', value: 30 },
+    { name: 'Authorize US', value: 25 },
   ],
   salesTrend: [
     { name: 'Jan', online: 4000, offline: 2400 },
@@ -57,7 +67,7 @@ const adminDummyData = {
   ]
 };
 
-// Travel consultant dummy data
+
 const travelConsultantData = {
   monthlySales: [
     { month: 'May 2024', sales: 2800 },
@@ -108,15 +118,6 @@ const travelConsultantData = {
   ]
 };
 
-// My personal sales data for travel consultant
-const myPersonalSales = [
-  { id: 1, client: 'John Smith', destination: 'Dubai', amount: 1250, date: '2025-05-25', status: 'Confirmed' },
-  { id: 2, client: 'Sarah Johnson', destination: 'London', amount: 980, date: '2025-05-24', status: 'Pending' },
-  { id: 3, client: 'Mike Brown', destination: 'Tokyo', amount: 1450, date: '2025-05-23', status: 'Confirmed' },
-  { id: 4, client: 'Emma Davis', destination: 'Paris', amount: 750, date: '2025-05-22', status: 'Confirmed' },
-  { id: 5, client: 'David Wilson', destination: 'New York', amount: 1100, date: '2025-05-21', status: 'Cancelled' },
-];
-
 // Card color configurations
 const cardColors = [
   { bg: 'bg-gradient-to-br from-blue-500 to-blue-600', text: 'text-white' },
@@ -130,66 +131,355 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const Overview = () => {
   const { user } = useAuth();
-  const [timeFrame, setTimeFrame] = useState('monthly');
+  const [timeFrame, setTimeFrame] = useState('daily');
+  const [salesData, setSalesData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const isAdmin = user?.role === 'admin';
   const isTravelConsultant = user?.role === 'travel';
   const isTicketConsultant = user?.role === 'ticket';
 
-  // Use appropriate data based on role
-  const dummyData = isAdmin ? adminDummyData : travelConsultantData;
+  // Fetch sales data from API
+  useEffect(() => {
+    const fetchSalesData = async () => {
+      if (!isAdmin) {
+        setLoading(false);
+        return;
+      }
 
-  // Determine which data to show based on selected timeframe
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/ticket-requests-status`, {
+          withCredentials: true
+        });
+
+        if (response.data.success) {
+          setSalesData(response.data.data);
+        }
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching sales data:', err);
+        setError('Failed to fetch sales data');
+        setLoading(false);
+      }
+    };
+
+    fetchSalesData();
+  }, [isAdmin]);
+
+  // Helper functions for calculations
+  const calculateDeduction = (mco) => {
+    const mcoAmount = parseFloat(mco || '0') || 0;
+    return mcoAmount * 0.15;
+  };
+
+  const calculateSale = (mco) => {
+    const mcoAmount = parseFloat(mco || '0') || 0;
+    const deduction = calculateDeduction(mco);
+    return mcoAmount - deduction;
+  };
+
+  // Process sales data for dashboard metrics
+  const processedData = () => {
+    if (!salesData.length) return null;
+
+    // Filter only "Charge" status entries
+    const chargedSales = salesData.filter(item => item.status === 'Charge');
+
+    // Calculate totals
+    const totalSales = chargedSales.reduce((sum, item) => {
+      const saleAmount = calculateSale(item.ticketRequest?.mco);
+      return sum + saleAmount;
+    }, 0);
+
+    const totalMCO = chargedSales.reduce((sum, item) => {
+      const mcoAmount = parseFloat(item.ticketRequest?.mco || '0') || 0;
+      return sum + mcoAmount;
+    }, 0);
+
+    const totalBookings = chargedSales.length;
+    const averageTicketCost = totalBookings > 0 ? totalSales / totalBookings : 0;
+
+    // Payment method distribution
+    const paymentMethodCounts = {};
+    chargedSales.forEach(item => {
+      const method = item.paymentMethod || 'Unknown';
+      paymentMethodCounts[method] = (paymentMethodCounts[method] || 0) + 1;
+    });
+
+    const paymentMethods = Object.entries(paymentMethodCounts).map(([name, count]) => ({
+      name,
+      value: Math.round((count / chargedSales.length) * 100)
+    }));
+
+    // Generate monthly sales data based on createdAt dates
+    const monthlySales = {};
+    chargedSales.forEach(item => {
+      const date = new Date(item.createdAt);
+      const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      const saleAmount = calculateSale(item.ticketRequest?.mco);
+      monthlySales[monthKey] = (monthlySales[monthKey] || 0) + saleAmount;
+    });
+
+    const monthlySalesArray = Object.entries(monthlySales).map(([month, sales]) => ({
+      month,
+      sales: Math.round(sales)
+    })).slice(-12); // Last 12 months
+
+    return {
+      totalSales,
+      totalMCO,
+      totalBookings,
+      averageTicketCost,
+      paymentMethods,
+      monthlySales: monthlySalesArray,
+      chargedSales
+    };
+  };
+
+  const metrics = processedData();
+
+  // Generate chart data based on timeframe and this getChartData only return data when user.role === 'admin' ok
   const getChartData = () => {
+    if (!metrics) return { data: [], dataKey: 'month', fill: '#8884d8' };
+
     switch (timeFrame) {
       case 'daily':
-        return {
-          data: dummyData.dailySales,
-          dataKey: 'day',
-          fill: '#8884d8'
-        };
+        // Generate last 7 days data
+        const dailyData = [];
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+          const dayKey = date.toISOString().split('T')[0];
+
+          const daySales = metrics.chargedSales
+            .filter(item => item.createdAt.split('T')[0] === dayKey)
+            .reduce((sum, item) => sum + calculateSale(item.ticketRequest?.mco), 0);
+
+          dailyData.push({ day: dayName, sales: Math.round(daySales) });
+        }
+        return { data: dailyData, dataKey: 'day', fill: '#8884d8' };
+
       case 'weekly':
-        return {
-          data: dummyData.weeklySales,
-          dataKey: 'week',
-          fill: '#82ca9d'
-        };
+        // Generate last 4 weeks data
+        const weeklyData = [];
+        for (let i = 3; i >= 0; i--) {
+          const weekStart = new Date();
+          weekStart.setDate(weekStart.getDate() - (i * 7));
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+
+          const weekSales = metrics.chargedSales
+            .filter(item => {
+              const itemDate = new Date(item.createdAt);
+              return itemDate >= weekStart && itemDate <= weekEnd;
+            })
+            .reduce((sum, item) => sum + calculateSale(item.ticketRequest?.mco), 0);
+
+          weeklyData.push({ week: `Week ${4 - i}`, sales: Math.round(weekSales) });
+        }
+        return { data: weeklyData, dataKey: 'week', fill: '#82ca9d' };
+
       case 'monthly':
       default:
-        return {
-          data: dummyData.monthlySales,
-          dataKey: 'month',
-          fill: '#8884d8'
-        };
+        return { data: metrics.monthlySales, dataKey: 'month', fill: '#8884d8' };
     }
   };
 
   const chartConfig = getChartData();
 
+  // Recent Sales Component
+  const RecentSales = () => {
+    if (!salesData || salesData.length === 0) {
+      return (
+        <Card className="col-span-full">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold">Recent Sales Data</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center h-32">
+              <p className="text-lg text-gray-500">No sales data available</p>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    const recentSales = salesData.slice(0, 5); // Show only 5 rows
+
+    return (
+      <Card className="col-span-full">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Recent Sales Data</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left p-3 font-semibold text-gray-700">Consultant</th>
+                  <th className="text-left p-3 font-semibold text-gray-700">Passenger</th>
+                  <th className="text-left p-3 font-semibold text-gray-700">Ticket Info</th>
+                  <th className="text-left p-3 font-semibold text-gray-700">Confirmation</th>
+                  <th className="text-left p-3 font-semibold text-gray-700">Sale/MCO</th>
+                  <th className="text-left p-3 font-semibold text-gray-700">Status</th>
+                  <th className="text-left p-3 font-semibold text-gray-700">Payment Method</th>
+                  <th className="text-left p-3 font-semibold text-gray-700">Processed By</th>
+                  <th className="text-left p-3 font-semibold text-gray-700">Updated At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentSales.map((item, index) => (
+                  <tr key={item._id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="p-3">
+                      <div>
+                        <div className="font-medium text-gray-900">{item.ticketRequest?.consultant || 'N/A'}</div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <div>
+                        <div className="font-medium text-gray-900">{item.ticketRequest?.passengerName || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{item.ticketRequest?.passengerEmail || 'N/A'}</div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <div>
+                        <div className="font-medium text-gray-900">{item.ticketRequest?.ticketType || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{item.ticketRequest?.requestFor || 'N/A'}</div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                        {item.ticketRequest?.confirmationCode || 'N/A'}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <div>
+                        {item.status === 'Charge' && (
+                          <div className="font-medium text-green-600">
+                            ${calculateSale(item.ticketRequest?.mco).toFixed(2)}
+                          </div>
+                        )}
+
+                        <div className="text-sm text-gray-500">
+                          MCO: ${item.ticketRequest?.mco || '0.00'}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.status === 'Charge' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span className="text-sm text-gray-900">{item.paymentMethod || 'N/A'}</span>
+                    </td>
+                    <td className="p-3">
+                      <span className="text-sm text-gray-900">{item.updatedBy || 'N/A'}</span>
+                    </td>
+                    <td className="p-3">
+                      <span className="text-sm text-gray-500">
+                        {new Date(item.updatedAt).toLocaleDateString()}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   // Admin Dashboard
   if (isAdmin) {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Loading sales data...</div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-red-600">Error: {error}</div>
+        </div>
+      );
+    }
+
+    // Handle case when no data but still show UI with ₹00.00 for cards and empty charts
+    const displayMetrics = metrics || {
+      totalSales: 0,
+      totalMCO: 0,
+      totalBookings: 0,
+      averageTicketCost: 0,
+      paymentMethods: [],
+      monthlySales: [],
+      chargedSales: []
+    };
+
+    // Generate empty chart data when no metrics
+    const getEmptyChartData = () => {
+      switch (timeFrame) {
+        case 'daily':
+          const emptyDailyData = [];
+          for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+            emptyDailyData.push({ day: dayName, sales: 0 });
+          }
+          return { data: emptyDailyData, dataKey: 'day', fill: '#8884d8' };
+
+        case 'weekly':
+          const emptyWeeklyData = [];
+          for (let i = 3; i >= 0; i--) {
+            emptyWeeklyData.push({ week: `Week ${4 - i}`, sales: 0 });
+          }
+          return { data: emptyWeeklyData, dataKey: 'week', fill: '#82ca9d' };
+
+        case 'monthly':
+        default:
+          const emptyMonthlyData = [];
+          for (let i = 11; i >= 0; i--) {
+            const date = new Date();
+            date.setMonth(date.getMonth() - i);
+            const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            emptyMonthlyData.push({ month: monthKey, sales: 0 });
+          }
+          return { data: emptyMonthlyData, dataKey: 'month', fill: '#8884d8' };
+      }
+    };
+
+    const finalChartConfig = (!metrics || displayMetrics.monthlySales.length === 0) ? getEmptyChartData() : chartConfig;
+
     return (
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
             {
               title: "Total Sales",
-              value: `$${SALES_DATA.reduce((sum, sale) => sum + sale.ticketCostUSD, 0).toFixed(2)}`,
+              value: `$${displayMetrics.totalSales.toFixed(2)}`,
               colorIndex: 0
             },
             {
               title: "Total MCO",
-              value: `$${SALES_DATA.reduce((sum, sale) => sum + sale.mcoUSD, 0).toFixed(2)}`,
+              value: `$${displayMetrics.totalMCO.toFixed(2)}`,
               colorIndex: 1
             },
             {
               title: "Total Bookings",
-              value: SALES_DATA.length,
+              value: displayMetrics.totalBookings,
               colorIndex: 2
             },
             {
-              title: "Average Ticket Cost",
-              value: `$${(SALES_DATA.reduce((sum, sale) => sum + sale.ticketCostUSD, 0) / SALES_DATA.length).toFixed(2)}`,
+              title: "Average Sale Amount",
+              value: `$${displayMetrics.averageTicketCost.toFixed(2)}`,
               colorIndex: 3
             }
           ].map((card, index) => (
@@ -198,14 +488,16 @@ const Overview = () => {
               className={`${cardColors[card.colorIndex].bg} rounded-lg shadow p-6`}
             >
               <h3 className={`text-sm font-medium ${cardColors[card.colorIndex].text} opacity-80`}>{card.title}</h3>
-              <p className={`text-2xl font-bold ${cardColors[card.colorIndex].text}`}>{card.value}</p>
+              <p className={`text-2xl font-bold ${cardColors[card.colorIndex].text}`}>
+                {card.value}
+              </p>
             </div>
           ))}
         </div>
 
-        <SalesList />
+        <RecentSales />
 
-        {/* Rest of admin dashboard charts */}
+        {/* Charts */}
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -241,16 +533,16 @@ const Overview = () => {
                       'Day-wise Sales'}
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  {timeFrame === 'monthly' ? 'Sales data for the last 12 months' :
+                  {timeFrame === 'monthly' ? 'Sales data for recent months' :
                     timeFrame === 'weekly' ? 'Sales data for the last 4 weeks' :
                       'Sales data for the last 7 days'}
                 </p>
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartConfig.data}>
+                    <BarChart data={finalChartConfig.data}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                       <XAxis
-                        dataKey={chartConfig.dataKey}
+                        dataKey={finalChartConfig.dataKey}
                         tickLine={false}
                         axisLine={false}
                       />
@@ -263,7 +555,7 @@ const Overview = () => {
                       <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Sales']} />
                       <Bar
                         dataKey="sales"
-                        fill={chartConfig.fill}
+                        fill={finalChartConfig.fill}
                         radius={[4, 4, 0, 0]}
                         name="Sales"
                       />
@@ -276,29 +568,48 @@ const Overview = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl font-bold">Ticket Category Distribution</CardTitle>
+              <CardTitle className="text-2xl font-bold">Most Payment Method</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={adminDummyData.categoryData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {adminDummyData.categoryData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
-                  </PieChart>
-                </ResponsiveContainer>
+                {displayMetrics.paymentMethods.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={displayMetrics.paymentMethods}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {displayMetrics.paymentMethods.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[{ name: 'No Data', value: 1 }]}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={100}
+                        fill="#e5e7eb"
+                        dataKey="value"
+                        label={() => 'No payment data'}
+                      >
+                        <Cell fill="#e5e7eb" />
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -409,36 +720,29 @@ const Overview = () => {
             <CardTitle className="text-2xl font-bold">My Recent Sales</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto text-center">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Client</th>
-                    <th className="text-left p-2">Destination</th>
-                    <th className="text-left p-2">Amount</th>
-                    <th className="text-left p-2">Date</th>
-                    <th className="text-left p-2">Status</th>
+                  <tr>
+                    <th className="px-4 py-2">Consultant</th>
+                    <th className="px-4 py-2">Passenger</th>
+                    <th className="px-4 py-2">Ticket Type</th>
+                    <th className="px-4 py-2">Confirmation</th>
+                    <th className="px-4 py-2">Sale / MCO</th>
+                    <th className="px-4 py-2">Status</th>
+                    <th className="px-4 py-2">Payment</th>
+                    <th className="px-4 py-2">Updated By</th>
+                    <th className="px-4 py-2">Updated At</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {myPersonalSales.map((sale) => (
-                    <tr key={sale.id} className="border-b">
-                      <td className="p-2">{sale.client}</td>
-                      <td className="p-2">{sale.destination}</td>
-                      <td className="p-2">${sale.amount}</td>
-                      <td className="p-2">{sale.date}</td>
-                      <td className="p-2">
-                        <span className={`px-2 py-1 rounded-full text-xs ${sale.status === 'Confirmed' ? 'bg-green-100 text-green-800' :
-                            sale.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                          }`}>
-                          {sale.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  <tr>
+                    <td className="p-2 text-center" colSpan="5">
+                    </td>
+                  </tr>
                 </tbody>
               </table>
+              No data available right now.
             </div>
           </CardContent>
         </Card>
@@ -531,11 +835,6 @@ const Overview = () => {
     );
   }
 
-
-
-
-
-
   // Travel Consultant Dashboard
   if (isTicketConsultant) {
     const totalRevenue = myPersonalSales.filter(sale => sale.status === 'Confirmed').reduce((sum, sale) => sum + sale.amount, 0);
@@ -592,7 +891,7 @@ const Overview = () => {
           <CardContent>
             <div className="overflow-x-auto">
               <table>
-              //here all ticket-requests
+                Comming Soon
               </table>
             </div>
           </CardContent>
@@ -603,7 +902,7 @@ const Overview = () => {
     );
   }
 
-  // Default fallback
+  // Default fallback for non-admin users
   return <div>Dashboard not available for your role.</div>;
 };
 

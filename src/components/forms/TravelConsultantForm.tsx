@@ -4,6 +4,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '../ui/use-toast';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 interface TravelConsultantFormData {
   date: string;
@@ -29,6 +30,8 @@ interface TravelConsultantFormData {
 const TravelConsultantForm = ({ user }: { user: { email: string; role: string; userName: string } }) => {
   const { toast } = useToast();
 
+  const navigate = useNavigate();
+
   const getTodayDate = () => new Date().toISOString().split('T')[0];
   const getCurrentTime = () => new Date().toTimeString().slice(0, 5);
 
@@ -42,7 +45,7 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
     phoneNumber: '',
     ticketCost: '',
     mco: '',
-    paymentMethod: 'debit',
+    paymentMethod: 'credit',
     cardNumber: '',
     cardholderName: '',
     expiryDate: '',
@@ -195,10 +198,11 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
 
       toast({
         title: 'Form submitted successfully',
-        description: 'Your travel consultant billing request has been submitted to admin',
+        description: 'Your travel consultant billing request has been submitted',
       });
 
       setFormData(initialFormData);
+      navigate('/dashboard/submissions')
 
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -283,15 +287,19 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="airlineCode">Airlines Code</Label>
-            <Input
-              id="airlineCode"
-              value={formData.airlineCode}
-              onChange={(e) => setFormData({ ...formData, airlineCode: e.target.value })}
-              placeholder="e.g., QR"
-            />
-          </div>
+
+          {formData.ticketType === 'Airline' && (
+            <div className="space-y-2">
+              <Label htmlFor="airlineCode">Airlines Code</Label>
+              <Input
+                id="airlineCode"
+                value={formData.airlineCode}
+                onChange={(e) => setFormData({ ...formData, airlineCode: e.target.value })}
+                placeholder="e.g., QR"
+              />
+            </div>
+          )}
+
 
           <div className="space-y-2">
             <Label htmlFor="confirmationCode">Confirmation Code *</Label>
@@ -368,18 +376,6 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
               <div className="flex items-center space-x-2">
                 <input
                   type="radio"
-                  id="debit"
-                  name="paymentMethod"
-                  value="debit"
-                  checked={formData.paymentMethod === 'debit'}
-                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                  className="h-4 w-4"
-                />
-                <Label htmlFor="debit" className="cursor-pointer">Debit Card</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
                   id="credit"
                   name="paymentMethod"
                   value="credit"
@@ -388,6 +384,18 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
                   className="h-4 w-4"
                 />
                 <Label htmlFor="credit" className="cursor-pointer">Credit Card</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="debit"
+                  name="paymentMethod"
+                  value="debit"
+                  checked={formData.paymentMethod === 'debit'}
+                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="debit" className="cursor-pointer">Debit Card</Label>
               </div>
             </div>
           </div>
