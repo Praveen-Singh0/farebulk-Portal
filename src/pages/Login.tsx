@@ -10,7 +10,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login, loading } = useAuth();
+  const { login, } = useAuth();
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,11 +73,10 @@ const Login = () => {
             </div>
           </div>
           <Button
-            disabled={loading}
             type="submit"
             className="w-full bg-[#9B87F5] hover:bg-[#7a6ad6] text-lg font-semibold py-3 rounded-lg mt-2"
           >
-            {loading ? "Please wait ..." : "Sign in"}
+            {"Sign in"}
           </Button>
         </form>
         <div className="mt-8 hidden text-center text-sm text-[#6c6f7b]">
