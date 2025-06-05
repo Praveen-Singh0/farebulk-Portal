@@ -5,6 +5,8 @@ import { Label } from '../ui/label';
 import { useToast } from '../ui/use-toast';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { RefreshCw, } from "lucide-react";
+
 
 interface TravelConsultantFormData {
   date: string;
@@ -57,6 +59,7 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
   };
 
   const [formData, setFormData] = useState<TravelConsultantFormData>(initialFormData);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Format card number with spaces
   const formatCardNumber = (value: string) => {
@@ -174,7 +177,7 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
     return true;
   };
 
-const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -188,7 +191,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       cardNumber: formData.cardNumber.replace(/\s/g, ''),
       phoneNumber: formData.phoneNumber.replace(/\D/g, ''),
     };
-
+    setLoading(true)
     try {
       const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/ticket-requests`, submissionData, {
         withCredentials: true,
@@ -211,6 +214,8 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         title: 'Submission failed',
         description: 'Something went wrong. Please try again.',
       });
+    } finally {
+      setLoading(false)
     }
   };
 
@@ -469,7 +474,14 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         </div>
 
         <Button type="submit" className="w-full bg-zinc-900 hover:bg-blue-700">
-          Submit Billing Request
+          {loading ? (
+            <>
+              <RefreshCw className="animate-spin text-white-500" />
+              <span className="ml-2">Submitting your request...</span>
+            </>
+          ) : (
+            "Submit Billing Request"
+          )}
         </Button>
       </form>
     </div>

@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area } from 'recharts';
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/contexts/use-auth';
+
 import axios from 'axios';
 
 // Define types
@@ -71,57 +72,6 @@ const myPersonalSales: SaleData[] = [
   { id: 5, client: 'David Wilson', destination: 'New York', amount: 0, date: '2025-05-21', status: 'Cancelled' },
 ];
 
-// Admin dummy data
-const adminDummyData = {
-  monthlySales: [
-    { month: 'May 2024', sales: 35000 },
-    { month: 'Jun 2024', sales: 52000 },
-    { month: 'Jul 2024', sales: 48000 },
-    { month: 'Aug 2024', sales: 47000 },
-    { month: 'Sep 2024', sales: 45000 },
-    { month: 'Oct 2024', sales: 53000 },
-    { month: 'Nov 2024', sales: 48000 },
-    { month: 'Dec 2024', sales: 51000 },
-    { month: 'Jan 2025', sales: 40000 },
-    { month: 'Feb 2025', sales: 49000 },
-    { month: 'Mar 2025', sales: 47000 },
-    { month: 'Apr 2025', sales: 50000 },
-    { month: 'May 2025', sales: 12000 },
-  ],
-  weeklySales: [
-    { week: 'Week 1', sales: 12000 },
-    { week: 'Week 2', sales: 15000 },
-    { week: 'Week 3', sales: 18000 },
-    { week: 'Week 4', sales: 14000 },
-  ],
-  dailySales: [
-    { day: 'Mon', sales: 8000 },
-    { day: 'Tue', sales: 7500 },
-    { day: 'Wed', sales: 9000 },
-    { day: 'Thu', sales: 8200 },
-    { day: 'Fri', sales: 7800 },
-    { day: 'Sat', sales: 5500 },
-    { day: 'Sun', sales: 4000 },
-  ],
-  paymentMethods: [
-    { name: 'Stripe UK', value: 45 },
-    { name: 'Stripe India', value: 30 },
-    { name: 'Authorize US', value: 25 },
-  ],
-  salesTrend: [
-    { name: 'Jan', online: 4000, offline: 2400 },
-    { name: 'Feb', online: 3000, offline: 1398 },
-    { name: 'Mar', online: 2000, offline: 9800 },
-    { name: 'Apr', online: 2780, offline: 3908 },
-    { name: 'May', online: 1890, offline: 4800 },
-  ],
-  regionSales: [
-    { name: 'North', value: 12400 },
-    { name: 'South', value: 15600 },
-    { name: 'East', value: 8900 },
-    { name: 'West', value: 14200 },
-  ]
-};
 
 const travelConsultantData = {
   monthlySales: [
@@ -346,7 +296,7 @@ const Overview: React.FC = () => {
 
   // Recent Sales Component
   const RecentSales: React.FC = () => {
-    if (!salesData || salesData.length === 0) {
+    if (!salesData || salesData.length === 0 ) {
       return (
         <Card className="col-span-full">
           <CardHeader>
@@ -354,7 +304,25 @@ const Overview: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-center h-32">
-              <p className="text-lg text-gray-500">No sales data available</p>
+               <div role="status" className="inline-flex items-center justify-center">
+            <svg
+              aria-hidden="true"
+              className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
+              viewBox="0 0 100 101"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                fill="currentColor"
+              />
+              <path
+                d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                fill="currentFill"
+              />
+            </svg>
+            <span className="sr-only">Loading...</span>
+          </div>
             </div>
           </CardContent>
         </Card>
@@ -450,14 +418,6 @@ const Overview: React.FC = () => {
 
   // Admin Dashboard
   if (isAdmin) {
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Loading sales data...</div>
-        </div>
-      );
-    }
-
     if (error) {
       return (
         <div className="flex items-center justify-center h-64">
@@ -868,7 +828,7 @@ const Overview: React.FC = () => {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={adminDummyData.regionSales}>
+                  <AreaChart >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis tickFormatter={(value) => `$${value}`} />
