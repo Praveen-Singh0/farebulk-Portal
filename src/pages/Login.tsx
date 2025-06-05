@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/contexts/use-auth';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -10,15 +10,13 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { user, login } = useAuth();
-
-  console.log("user from Login", user)
+  const { login, loading } = useAuth();
 
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  await login(email, password);
-};
+    e.preventDefault();
+    await login(email, password);
+  };
 
 
   return (
@@ -75,10 +73,11 @@ const Login = () => {
             </div>
           </div>
           <Button
+            disabled={loading}
             type="submit"
             className="w-full bg-[#9B87F5] hover:bg-[#7a6ad6] text-lg font-semibold py-3 rounded-lg mt-2"
           >
-            Sign in
+            {loading ? "Please wait ..." : "Sign in"}
           </Button>
         </form>
         <div className="mt-8 hidden text-center text-sm text-[#6c6f7b]">
