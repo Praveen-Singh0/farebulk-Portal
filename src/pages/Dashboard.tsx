@@ -7,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 import Consultants from './Consultants';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
-import { useAuth } from '@/contexts/use-auth';
+import { useAuth } from '../contexts/AuthContext';
 import TicketRequest from './TicketRequest';
 import Submission from './Submissions';
 import MySale from './mySale';

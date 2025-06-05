@@ -2,8 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv')
-dotenv.config();
+require('dotenv').config();
 
 const { User } = require('./models/User.js')
 
@@ -21,7 +20,7 @@ app.use(cookieParser());
 
 
 const corsOptions = {
-  origin: process.env.CORS_DOMAIN,
+  origin: 'https://crm.farebulk.com',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,

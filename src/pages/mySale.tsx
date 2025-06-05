@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { Search, RefreshCw, Eye, Calendar, DollarSign } from "lucide-react";
 import { format } from "date-fns";
 import axios from "axios";
-import { useAuth } from '@/contexts/use-auth';
-
+import { useAuth } from "../contexts/AuthContext";
 
 interface TicketRequestStatus {
   _id: string;
@@ -184,6 +183,19 @@ export default function MySale() {
       return sum + saleAmount;
     }, 0);
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="bg-white rounded-lg shadow-md">
+          <div className="flex items-center justify-center h-64">
+            <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
+            <span className="ml-2 text-gray-600">Loading sales data...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Error state
   if (error) {
@@ -312,15 +324,7 @@ export default function MySale() {
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={9}>
-                      <div className="flex items-center justify-center h-64">
-                        <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredStatuses.length === 0 ? (
+                {filteredStatuses.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="text-center p-8 text-gray-500">
                       {searchTerm
@@ -363,6 +367,7 @@ export default function MySale() {
                               {formatCurrency(saleAmount)}
                             </div>
                           )}
+
                           {ticket?.mco && (
                             <div className="text-sm text-gray-500">
                               MCO: {formatCurrency(parseFloat(ticket.mco))}
@@ -398,7 +403,6 @@ export default function MySale() {
                   })
                 )}
               </tbody>
-
             </table>
           </div>
         </div>

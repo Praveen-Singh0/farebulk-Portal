@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { Search, RefreshCw, Eye, X } from "lucide-react";
 import { format } from "date-fns";
 import axios from "axios";
-import { useAuth } from '@/contexts/use-auth';
-
+import { useAuth } from "../contexts/AuthContext";
 
 interface TicketRequest {
   _id: string;
@@ -158,6 +157,20 @@ export default function Submission() {
     setIsEditMode(false);
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="bg-white rounded-lg shadow-md">
+          <div className="flex items-center justify-center h-64">
+            <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
+            <span className="ml-2 text-gray-600">Loading ticket requests...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Error state
   if (error) {
     return (
@@ -256,30 +269,20 @@ export default function Submission() {
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={7}>
-                      <div className="flex items-center justify-center h-64">
-                        <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredRequests.length === 0 ? (
+                {filteredRequests.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center p-8 text-gray-500">
                       {searchTerm
                         ? "No ticket requests match your search."
                         : user.role === 'admin'
                           ? "No ticket requests found."
-                          : "You haven't submitted any ticket requests yet."}
+                          : "You haven't submitted any ticket requests yet."
+                      }
                     </td>
                   </tr>
                 ) : (
                   filteredRequests.map((request) => (
-                    <tr
-                      key={request._id}
-                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                    >
+                    <tr key={request._id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="p-3">
                         <div className="font-medium text-gray-900">{request.passengerName}</div>
                         <div className="text-sm text-gray-500">{request.passengerEmail}</div>
@@ -301,10 +304,17 @@ export default function Submission() {
                         <div className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
                           Ticket Cost : {formatCurrency(request.ticketCost)}
                         </div>
-                        <div className="text-sm text-gray-500 px-2 py-1 ">
-                          MCO : {formatCurrency(request.mco)}
-                        </div>
+                        <div className="text-sm text-gray-500 px-2 py-1 ">MCO : {formatCurrency(request.mco)}</div>
                       </td>
+                      {/* <td className="p-3">
+                        {request.consultant ? (
+                          <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                            {request.consultant}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-sm">Unassigned</span>
+                        )}
+                      </td> */}
                       <td className="p-3">
                         <div className="text-sm text-gray-700">
                           {formatDate(request.createdAt)}
@@ -319,13 +329,19 @@ export default function Submission() {
                           >
                             <Eye className="h-4 w-4 text-gray-600" />
                           </button>
+                          {/* <button 
+                            onClick={() => handleEdit(request)}
+                            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                            title="Edit"
+                          >
+                            <Edit className="h-4 w-4 text-gray-600" />
+                          </button> */}
                         </div>
                       </td>
                     </tr>
                   ))
                 )}
               </tbody>
-
             </table>
           </div>
         </div>

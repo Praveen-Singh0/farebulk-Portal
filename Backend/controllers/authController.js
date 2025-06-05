@@ -15,12 +15,9 @@ const generateAccessToken = (userId) => {
 // User Login
 const login = async (req, res) => {
   const { email, password } = req.body;
-  console.log("eeeeee", email)
 
   try {
     const user = await User.findOne({ email });
-
-    console.log("user......", user)
 
     if (!user) return res.status(401).json({ message: 'User does not exist' });
 

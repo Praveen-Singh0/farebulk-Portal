@@ -1,26 +1,26 @@
-import { useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/ui/use-toast';
 import axios from 'axios'
-import { AuthContext } from './auth-context-const';
-type UserRole = 'admin' | 'travel' | 'ticket'; //type aliase
+type UserRole = 'admin' | 'travel' | 'ticket';
 
 interface User {
-  email: string; //required
-  role: UserRole; //required
-  userName?: string; //optional
+  email: string;
+  role: UserRole;
+  userName?: string;
 }
 
-interface login {
-  (email: string, password: string): Promise<boolean>
+interface AuthContextType {
+  user: User | null;
+  login: (email: string, password: string,) => Promise<boolean>;
+  logout: () => void;
 }
 
-
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    const checkAuth = async (): Promise<void> => {
+    const checkAuth = async () => {
       try {
         const res = await axios.get(`${import.meta.env.VITE_BASE_URL}/dashboard?timestamp=${Date.now()}`, {
           withCredentials: true
@@ -48,12 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Optionally navigate based on role:
         // (Uncomment this only if you want auto-redirect on refresh)
 
-        const currentPath = window.location.pathname;
-
-        if (currentPath === '/' || currentPath === '/login') {
-          if (['admin', 'travel', 'ticket'].includes(role)) {
-            navigate('/dashboard/overview');
-          }
+        if (['admin', 'travel', 'ticket'].includes(role)) {
+          navigate('/dashboard/overview');
+        } else {
+          navigate('/login');
         }
 
 
@@ -65,19 +63,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     checkAuth();
-  }, [navigate]);
+  }, []);
 
 
 
-  const login: login = async (email, password) => {
-    setLoading(true)
+
+
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
+
       const response = await axios.post(
         `${import.meta.env.VITE_BASE_URL}/auth/login`,
         { email, password },
         { withCredentials: true }
       );
+
+      console.log("logon response :", response)
+
       const { user: userData, } = response.data;
+
+      console.log("user login :", userData)
 
       if (!userData || !userData.role) {
         toast({
@@ -92,11 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser({ email: userEmail, role, userName });
 
-      if (['admin', 'travel', 'ticket'].includes(role)) {
-        navigate('/dashboard/overview');
-      } else {
-        navigate('/login');
-      }
+       if (['admin', 'travel', 'ticket'].includes(role)) {
+          navigate('/dashboard/overview');
+        } else {
+          navigate('/login');
+        }
 
       toast({
         title: 'Login Successful',
@@ -104,30 +109,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       return true;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        toast({
-          title: 'Login Error',
-          description:
-            error?.response?.data?.message || 'Server error during login',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Login Error',
-          description: 'Something went wrong',
-          variant: 'destructive',
-        });
-
-      }
+    } catch (error: any) {
+      toast({
+        title: 'Login Error',
+        description:
+          error?.response?.data?.message || 'Server error during login',
+        variant: 'destructive',
+      });
       return false;
-    } finally {
-      setLoading(false)
     }
   };
 
+
+
   const logout = async () => {
-    setLoading(true)
     try {
       await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/logout`, {}, {
         withCredentials: true,
@@ -139,21 +134,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: 'You have been successfully logged out.',
       });
     } catch (error) {
-      console.log(error)
       toast({
         title: 'Logout Failed',
         description: 'Something went wrong during logout.',
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false)
     }
   };
 
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
