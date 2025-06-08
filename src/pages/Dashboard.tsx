@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/use-auth';
 import TicketRequest from './TicketRequest';
 import Submission from './Submissions';
 import MySale from './mySale';
+import APIBooking from './APIBooking';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -96,6 +97,7 @@ const Dashboard = () => {
             <Route path="ticket-request" element={<TicketRequest />} />
             <Route path="profile" element={<div>Comming Soon</div>} />
             <Route path="submissions" element={<div><Submission/></div>} />
+            <Route path="APIBooking" element={<div><APIBooking/></div>} />
           </Routes>
         </main>
       </div>

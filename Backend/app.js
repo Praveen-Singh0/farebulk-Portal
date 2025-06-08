@@ -13,12 +13,12 @@ const authRoutes = require('./routes/authRoutes');
 
 const ticketRequestRoutes = require('./routes/ticketRequest');
 const ticketRequestStatusRoutes = require('./routes/ticketRequestStatusRoutes');
+const multiSiteCrmRoutes = require('./routes/multiSiteCrm');
 
 
 const app = express();
 
 app.use(cookieParser());
-
 
 const corsOptions = {
   origin: process.env.CORS_DOMAIN,
@@ -28,9 +28,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-
-
 app.use(express.json());
 
 // Routes
@@ -38,6 +35,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/ticket-requests', ticketRequestRoutes);
 app.use('/api/ticket-requests-status', ticketRequestStatusRoutes);
 app.use('/api/items', itemRoutes);
+app.use('/api', multiSiteCrmRoutes);
 
 app.get('/api/dashboard', verifyUser, async (req, res) => {
   try {
@@ -61,8 +59,6 @@ app.get('/api/dashboard', verifyUser, async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
-
-
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)

@@ -9,7 +9,8 @@ import {
   ShoppingCart,
   User,
   ClipboardList,
-  X
+  X,
+  Plane
 } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -24,6 +25,7 @@ const Sidebar = ({ role }: SidebarProps) => {
     { name: 'Dashboard', path: '/dashboard/overview', icon: LayoutDashboard },
     { name: 'Sales Overview', path: '/dashboard/sales', icon: BarChart3 },
     { name: 'Consultants', path: '/dashboard/consultants', icon: Users },
+    { name: 'Flight Bookings', path: '/dashboard/APIBooking', icon: Plane },
     { name: 'Reports', path: '/dashboard/reports', icon: FileText },
     { name: 'Settings', path: '/dashboard/settings', icon: Settings },
   ];
@@ -33,6 +35,7 @@ const Sidebar = ({ role }: SidebarProps) => {
     { name: 'Add Sale', path: '/dashboard/forms', icon: ShoppingCart },
     { name: 'My Sales', path: '/dashboard/my-sales', icon: BarChart3 },
     { name: 'My Submissions', path: '/dashboard/submissions', icon: ClipboardList },
+    { name: 'Flight Bookings', path: '/dashboard/APIBooking', icon: Plane },
     { name: 'My Profile', path: '/dashboard/profile', icon: User },
   ];
 
@@ -40,13 +43,14 @@ const Sidebar = ({ role }: SidebarProps) => {
     { name: 'Dashboard', path: '/dashboard/overview', icon: LayoutDashboard },
     { name: 'Ticket Request', path: '/dashboard/ticket-request', icon: ShoppingCart },
     { name: 'My Sales', path: '/dashboard/my-sales', icon: BarChart3 },
+    { name: 'Flight Bookings', path: '/dashboard/APIBooking', icon: Plane },
     { name: 'My Profile', path: '/dashboard/profile', icon: User },
   ];
 
-  const menu = role === 'admin' 
-    ? adminMenu 
-    : role === 'travel' 
-      ? travelConsultantMenu 
+  const menu = role === 'admin'
+    ? adminMenu
+    : role === 'travel'
+      ? travelConsultantMenu
       : ticketConsultantMenu;
 
   return (
@@ -54,9 +58,9 @@ const Sidebar = ({ role }: SidebarProps) => {
       <div className="p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-foreground">
-            {role === 'admin' ? 'Admin Dashboard' : 
-             role === 'travel' ? 'Travel Consultant' : 
-             'Ticket Consultant'}
+            {role === 'admin' ? 'Admin Dashboard' :
+              role === 'travel' ? 'Travel Consultant' :
+                'Ticket Consultant'}
           </h2>
           <Button
             variant="ghost"
