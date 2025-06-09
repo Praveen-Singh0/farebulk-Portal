@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, X, Calendar, Plane, CreditCard, User, Trash2, Globe, Filter, RefreshCw } from 'lucide-react';
 
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+
 // TypeScript Interfaces
 interface PassengerEntry {
   id: number;
@@ -245,26 +256,34 @@ const MultiSiteFlightUsersTable: React.FC = () => {
               <label htmlFor="websiteFilter" className="text-sm font-medium text-gray-700">
                 Filter by Website
               </label>
-
               <div className="relative w-64">
-                <select
-                  id="websiteFilter"
+                <Select
                   value={selectedWebsiteFilter}
-                  onChange={(e) => setSelectedWebsiteFilter(e.target.value)}
-                  className="block w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2 pr-10 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onValueChange={(value) => setSelectedWebsiteFilter(value)}
                 >
-                  <option value="all">
-                    All Websites ({users.length})
-                  </option>
-                  {websiteSummary
-                    .filter(w => w.success && w.count > 0)
-                    .map((website) => (
-                      <option key={website.websiteId} value={website.websiteId}>
-                        {website.website} ({website.count})
-                      </option>
-                    ))}
-                </select>
+                  <SelectTrigger className="w-[220px]">
+                    <SelectValue placeholder={`All Websites (${users.length})`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="all">
+                        All Websites ({users.length})
+                      </SelectItem>
 
+                      {/* Dynamic options from websiteSummary */}
+                      {websiteSummary
+                        .filter((w) => w.success && w.count > 0)
+                        .map((website) => (
+                          <SelectItem
+                            key={website.websiteId}
+                            value={website.websiteId}
+                          >
+                            {website.website} ({website.count})
+                          </SelectItem>
+                        ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
                 {/* Down Arrow Icon */}
                 <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
                   {/* <ChevronDown className="h-4 w-4 text-gray-400" /> */}
