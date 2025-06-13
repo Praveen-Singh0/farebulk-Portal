@@ -244,7 +244,7 @@ const Dashboard: React.FC = () => {
     setIsTodoOpen(true);
   };
 
-  const handleViewRequest = (requestId: string): void => {
+  const handleViewRequest = (): void => {
     setIsNotificationPanelOpen(false);
     navigate('/dashboard/ticket-request');
   };
