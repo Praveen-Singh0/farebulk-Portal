@@ -68,14 +68,15 @@ export default function Submission() {
       // Filter tickets based on user email and status
       const userTickets = response.data.filter((ticket: TicketRequest) => {
         // First filter by user access
-        let hasAccess = false;
-        if (user.role === 'ticket') {
-          hasAccess = true;
-        } else {
-          hasAccess = ticket.passengerEmail === user.email ||
+        let hasAccess = user.role === 'ticket' || user.role === 'admin';
+
+        if (!hasAccess) {
+          hasAccess =
+            ticket.passengerEmail === user.email ||
             ticket.consultant === user.userName ||
             ticket.consultant === user.email;
         }
+
         console.log("ticket :", ticket)
 
         // Then filter by status - only show pending requests
@@ -305,7 +306,9 @@ export default function Submission() {
                   <th className="text-left p-3 font-semibold text-gray-700">Cost</th>
                   <th className="text-left p-3 font-semibold text-gray-700">Submitted</th>
                   <th className="text-left p-3 font-semibold text-gray-700">Status</th>
-                  <th className="text-right p-3 font-semibold text-gray-700">Actions</th>
+                  {user.role === "ticket" && (
+                    <th className="text-right p-3 font-semibold text-gray-700">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -360,17 +363,20 @@ export default function Submission() {
                           {request.status || "No Status"}
                         </div>
                       </td>
-                      <td className="p-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleViewDetails(request)}
-                            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-                            title="View Details"
-                          >
-                            <Eye className="h-4 w-4 text-gray-600" />
-                          </button>
-                        </div>
-                      </td>
+                      {user.role === "ticket" && (
+                        <td className="p-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleViewDetails(request)}
+                              className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                              title="View Details"
+                            >
+                              <Eye className="h-4 w-4 text-gray-600" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+
                     </tr>
                   ))
                 )}

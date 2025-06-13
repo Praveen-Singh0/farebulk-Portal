@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, X, Calendar, Plane, CreditCard, User, Trash2, Globe, Filter, RefreshCw } from 'lucide-react';
-
 import {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useAuth } from '@/contexts/use-auth';
+
 
 
 // TypeScript Interfaces
@@ -52,7 +52,6 @@ interface FlightUser {
   updatedAt: string;
   __v: number;
   websiteSource: WebsiteSource;
-
 }
 
 interface WebsiteSummary {
@@ -75,7 +74,13 @@ interface ApiResponse {
   fetchedAt: string;
 }
 
+interface PassengersTableProps {
+  selectedUser: FlightUser;
+}
+
+
 const MultiSiteFlightUsersTable: React.FC = () => {
+  const { user } = useAuth();
   const [users, setUsers] = useState<FlightUser[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedUser, setSelectedUser] = useState<FlightUser | null>(null);
@@ -88,6 +93,10 @@ const MultiSiteFlightUsersTable: React.FC = () => {
   const [websiteSummary, setWebsiteSummary] = useState<WebsiteSummary[]>([]);
   const [selectedWebsiteFilter, setSelectedWebsiteFilter] = useState<string>('all');
   const [lastFetched, setLastFetched] = useState<string>('');
+
+
+  const isAdmin = user?.role === 'admin';
+  const isTicketConsultant = user?.role === 'ticket';
 
   useEffect(() => {
     fetchAllFlightUsers();
@@ -201,15 +210,62 @@ const MultiSiteFlightUsersTable: React.FC = () => {
   //   );
   // }
 
+
+  const PassengersTable: React.FC<PassengersTableProps> = ({ selectedUser }) => {
+    if (!selectedUser || !selectedUser.entries || selectedUser.entries.length === 0) {
+      return <div className="text-gray-500">No passengers found</div>;
+    }
+
+    return (
+     <div className="bg-gray-100 p-3 sm:p-4 rounded-lg mt-4">
+        <h4 className="flex items-center text-sm sm:text-md font-semibold text-gray-800 mb-3">
+          <User className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+          All Passengers
+        </h4>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium text-gray-700 border-b">ID</th>
+                <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium text-gray-700 border-b">First Name</th>
+                <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium text-gray-700 border-b hidden sm:table-cell">Middle Name</th>
+                <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium text-gray-700 border-b">Last Name</th>
+                <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium text-gray-700 border-b">Gender</th>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedUser.entries.map((passenger, index) => (
+                <tr key={passenger._id || passenger.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 border-b">{passenger.id}</td>
+                  <td className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 border-b">{passenger.firstName || '-'}</td>
+                  <td className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 border-b hidden sm:table-cell">{passenger.middleName || '-'}</td>
+                  <td className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 border-b">{passenger.lastName || '-'}</td>
+                  <td className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 border-b">
+                    <span className={`px-1 sm:px-2 py-1 rounded-full text-xs font-medium ${passenger.gender === 'Male' ? 'bg-blue-100 text-blue-800' :
+                      passenger.gender === 'Female' ? 'bg-pink-100 text-pink-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                      {passenger.gender}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Online Flight Bookings</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
+          <div className="w-full sm:w-auto">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Online Flight Bookings</h1>
             {lastFetched && (
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
                 Last updated: {formatDate(lastFetched)}
               </p>
             )}
@@ -217,7 +273,7 @@ const MultiSiteFlightUsersTable: React.FC = () => {
           <button
             onClick={fetchAllFlightUsers}
             disabled={loading}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh Data
@@ -225,16 +281,16 @@ const MultiSiteFlightUsersTable: React.FC = () => {
         </div>
 
         {/* Website Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mb-4 sm:mb-6">
           {websiteSummary.map((website) => (
-            <div key={website.websiteId} className={`p-4 rounded-lg border ${website.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+            <div key={website.websiteId} className={`p-3 sm:p-4 rounded-lg border ${website.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
               <div className="flex items-center justify-between">
-                <Globe className={`h-5 w-5 ${website.success ? 'text-green-600' : 'text-red-600'}`} />
+                <Globe className={`h-4 w-4 sm:h-5 sm:w-5 ${website.success ? 'text-green-600' : 'text-red-600'}`} />
                 <span className={`px-2 py-1 text-xs rounded-full ${website.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                   {website.success ? 'Online' : 'Error'}
                 </span>
               </div>
-              <h3 className="font-semibold text-sm mt-2 truncate" title={website.website}>
+              <h3 className="font-semibold text-xs sm:text-sm mt-2 truncate" title={website.website}>
                 {website.website}
               </h3>
               <p className="text-lg font-bold text-gray-900">{website.count}</p>
@@ -248,15 +304,14 @@ const MultiSiteFlightUsersTable: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white p-4 rounded-xl shadow-md mb-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-              <Filter className="h-5 w-5 text-blue-600" />
-
-              <label htmlFor="websiteFilter" className="text-sm font-medium text-gray-700">
+        <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+            <div className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200 shadow-sm w-full sm:w-auto">
+              <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
+              <label htmlFor="websiteFilter" className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">
                 Filter by Website
               </label>
-              <div className="relative w-64">
+              <div className="relative flex-1 sm:w-48 lg:w-64">
                 <Select
                   value={selectedWebsiteFilter}
                   onValueChange={(value) => setSelectedWebsiteFilter(value)}
@@ -284,19 +339,82 @@ const MultiSiteFlightUsersTable: React.FC = () => {
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-                {/* Down Arrow Icon */}
-                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                  {/* <ChevronDown className="h-4 w-4 text-gray-400" /> */}
-                </div>
               </div>
             </div>
-
           </div>
         </div>
 
+        {/* Mobile Card View for small screens */}
+        <div className="block lg:hidden">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">Loading data...</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredUsers.map((user: FlightUser) => (
+                <div key={`${user.websiteSource.id}-${user._id}`} className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
+                  <div className="flex justify-between items-start mb-3">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getWebsiteColor(user.websiteSource.id)}`}>
+                      <Globe className="h-3 w-3 mr-1" />
+                      {user.websiteSource.name}
+                    </span>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => openModal(user)}
+                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
+                      </button>
+                      {(isTicketConsultant || isAdmin) && (
+                        <button
+                          onClick={() => openDeleteConfirm(user)}
+                          className="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Del
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{user.bookingNumber}</p>
+                      <p className="text-xs text-gray-500">{user.flightCarrierCode}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {getPassengerName(user.entries)}
+                        {user.entries.length > 1 && (
+                          <span className='text-sm font-medium text-red-900'> + {user.entries.length - 1} more</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-900">{user.flightFrom}</span>
+                        <Plane className="h-3 w-3 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-900">{user.flightTo}</span>
+                      </div>
+                      <span className="text-sm font-bold text-green-600">${user.price}</span>
+                    </div>
+                    
+                    <p className="text-xs text-gray-500">{formatDate(user.createdAt)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        {/* Desktop Table View */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden hidden lg:block">
           <div className="overflow-x-auto">
             {loading ? (
               <div className="flex justify-center items-center h-64">
@@ -333,7 +451,11 @@ const MultiSiteFlightUsersTable: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{getPassengerName(user.entries)}</div>
+                          <div className="text-sm font-medium text-gray-900">{getPassengerName(user.entries)}
+                            {user.entries.length > 1 && (
+                              <span className='text-sm font-medium text-red-900'> + {user.entries.length - 1} more</span>
+                            )}
+                          </div>
                           <div className="text-sm text-gray-500">{user.email}</div>
                         </div>
                       </td>
@@ -356,12 +478,14 @@ const MultiSiteFlightUsersTable: React.FC = () => {
                           >
                             <Eye className="h-4 w-4 mr-1" />
                           </button>
-                          {/* <button
-                            onClick={() => openDeleteConfirm(user)}
-                            className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200"
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                          </button> */}
+                          {(isTicketConsultant || isAdmin) && (
+                            <button
+                              onClick={() => openDeleteConfirm(user)}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -372,21 +496,20 @@ const MultiSiteFlightUsersTable: React.FC = () => {
           </div>
         </div>
 
-
-        {filteredUsers.length === 0 && (
+        {filteredUsers.length === 0 && !loading && (
           <div className="text-center py-12">
             <p className="text-gray-500">No flight bookings found for the selected filter.</p>
           </div>
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal - Responsive */}
       {showModal && selectedUser && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
+          <div className="relative top-4 sm:top-20 mx-auto p-3 sm:p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white mb-4">
+            <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900">
                   Booking Details - {selectedUser.bookingNumber}
                 </h3>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 ${getWebsiteColor(selectedUser.websiteSource.id)}`}>
@@ -396,47 +519,35 @@ const MultiSiteFlightUsersTable: React.FC = () => {
               </div>
               <button
                 onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 p-1"
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             </div>
 
             <div className="max-h-96 overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Website Information */}
-                {/* <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="flex items-center text-md font-semibold text-gray-800 mb-3">
-                    <Globe className="h-5 w-5 mr-2" />
-                    Website Information
-                  </h4>
-                  <div className="space-y-2">
-                    <p><strong>Website:</strong> {selectedUser.websiteSource.name}</p>
-                    <p><strong>Website ID:</strong> {selectedUser.websiteSource.id}</p>
-                    <p><strong>Base URL:</strong> {selectedUser.websiteSource.baseUrl}</p>
-                  </div>
-                </div> */}
-
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* Passenger Information */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="flex items-center text-md font-semibold text-gray-800 mb-3">
-                    <User className="h-5 w-5 mr-2" />
+                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                  <h4 className="flex items-center text-sm sm:text-md font-semibold text-gray-800 mb-3">
+                    <User className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                     Passenger Information
                   </h4>
-                  <div className="space-y-2">
+                  <div className="space-y-2 text-sm">
                     <p><strong>Name:</strong> {getPassengerName(selectedUser.entries)}</p>
                     <p><strong>Email:</strong> {selectedUser.email}</p>
                     <p><strong>Phone:</strong> {selectedUser.phone}</p>
                     {selectedUser.entries && selectedUser.entries[0] && (
                       <p><strong>Gender:</strong> {selectedUser.entries[0].gender}</p>
                     )}
+                    <p><strong>Total Passenger:</strong> {selectedUser.entries.length}</p>
                   </div>
                 </div>
 
                 {/* Flight Information */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="flex items-center text-md font-semibold text-gray-800 mb-3">
-                    <Plane className="h-5 w-5 mr-2" />
+                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                  <h4 className="flex items-center text-sm sm:text-md font-semibold text-gray-800 mb-3">
+                    <Plane className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                     Flight Information
                   </h4>
                   <div className="space-y-2">
@@ -481,15 +592,7 @@ const MultiSiteFlightUsersTable: React.FC = () => {
               </div>
 
               {/* Flight Details */}
-              {selectedUser.flightFulldetails && (
-                <div className="mt-6  rounded-lg">
-                  <div >
-                    <pre className="text-xs text-gray-600 whitespace-pre-wrap overflow-x-auto">
-                      {JSON.stringify(selectedUser.flightFulldetails, null, 2)}
-                    </pre>
-                  </div>
-                </div>
-              )}
+              <PassengersTable selectedUser={selectedUser} />
             </div>
 
             <div className="mt-6 flex justify-end">

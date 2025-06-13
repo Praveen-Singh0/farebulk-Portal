@@ -3,6 +3,9 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from './components/ui/toaster';
+import '../public/assets/style.css'
+
+
 
 function App() {
   return (
