@@ -318,7 +318,7 @@ const Dashboard: React.FC = () => {
                   <div
                     key={request._id}
                     className="bg-blue-50 border border-blue-200 rounded-lg p-4 hover:bg-blue-100 transition-colors cursor-pointer"
-                    onClick={() => handleViewRequest(request._id)}
+                    onClick={() => handleViewRequest()}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -351,7 +351,7 @@ const Dashboard: React.FC = () => {
           {pendingRequests.length > 0 && (
             <div className="p-4 border-t border-gray-200 bg-gray-50">
               <button
-                onClick={() => handleViewRequest('')}
+                onClick={() => handleViewRequest()}
                 className="w-full bg-black text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 View All Ticket Requests
