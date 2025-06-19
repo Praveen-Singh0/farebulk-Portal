@@ -82,7 +82,39 @@ const getAllTicketRequestStatuses = async (req, res) => {
   }
 };
 
+
+const deleteTicketRequestStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log("id.....", id)
+
+    const deleted = await TicketRequestStatus.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket request status not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Ticket request status deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting ticket request status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
+
 module.exports = {
   createTicketRequestStatus,
-  getAllTicketRequestStatuses
+  getAllTicketRequestStatuses,
+  deleteTicketRequestStatus
 };

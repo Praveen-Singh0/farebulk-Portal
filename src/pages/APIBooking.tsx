@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, X, Calendar, Plane, CreditCard, User, Trash2, Globe, Filter, RefreshCw } from 'lucide-react';
+import { Eye, X, Calendar, Plane, CreditCard, User, Trash2, Globe, Filter, RefreshCw, Clock, MapPin, Users } from 'lucide-react';
+
 import {
   Select,
   SelectContent,
@@ -178,6 +179,43 @@ const MultiSiteFlightUsersTable: React.FC = () => {
     });
   };
 
+  const formatTime = (isoString?: string): string => {
+    return new Date(isoString ?? '').toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+
+  const formatDuration = (duration: string): string => {
+    const match = duration.match(/PT(\d+)H(\d+)M/);
+    if (match) {
+      return `${match[1]}h ${match[2]}m`;
+    }
+    return duration;
+  };
+
+
+  const getAirportName = (code: string): string => {
+    const airports: Record<string, string> = {
+      'ONT': 'Ontario International Airport',
+      'DEN': 'Denver International Airport',
+      'LAX': 'Los Angeles International Airport'
+    };
+    return airports[code] || code;
+  };
+
+
+
+  const getCarrierName = (code: string): string => {
+    const carriers: Record<string, string> = {
+      'F9': 'Frontier Airlines'
+    };
+    return carriers[code] || code;
+  };
+
+
   const getPassengerName = (entries: PassengerEntry[]): string => {
     if (entries && entries.length > 0) {
       const passenger = entries[0];
@@ -217,7 +255,7 @@ const MultiSiteFlightUsersTable: React.FC = () => {
     }
 
     return (
-     <div className="bg-gray-100 p-3 sm:p-4 rounded-lg mt-4">
+      <div className="bg-gray-100 p-3 sm:p-4 rounded-lg mt-4">
         <h4 className="flex items-center text-sm sm:text-md font-semibold text-gray-800 mb-3">
           <User className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
           All Passengers
@@ -379,13 +417,13 @@ const MultiSiteFlightUsersTable: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm font-medium text-gray-900">{user.bookingNumber}</p>
                       <p className="text-xs text-gray-500">{user.flightCarrierCode}</p>
                     </div>
-                    
+
                     <div>
                       <p className="text-sm font-medium text-gray-900">
                         {getPassengerName(user.entries)}
@@ -395,7 +433,7 @@ const MultiSiteFlightUsersTable: React.FC = () => {
                       </p>
                       <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <span className="text-sm font-medium text-gray-900">{user.flightFrom}</span>
@@ -404,7 +442,7 @@ const MultiSiteFlightUsersTable: React.FC = () => {
                       </div>
                       <span className="text-sm font-bold text-green-600">${user.price}</span>
                     </div>
-                    
+
                     <p className="text-xs text-gray-500">{formatDate(user.createdAt)}</p>
                   </div>
                 </div>
@@ -503,77 +541,201 @@ const MultiSiteFlightUsersTable: React.FC = () => {
         )}
       </div>
 
-      {/* Modal - Responsive */}
+
+
+
+
+
+
+
+
+
+
       {showModal && selectedUser && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-4 sm:top-20 mx-auto p-3 sm:p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white mb-4">
-            <div className="flex justify-between items-start mb-4">
+          <div className="relative top-4 sm:top-8 mx-auto p-3 sm:p-5 border w-11/12 max-w-6xl shadow-lg rounded-md bg-white mb-4">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-6 border-b pb-4">
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-gray-900">
-                  Booking Details - {selectedUser.bookingNumber}
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+                  Booking Confirmation
                 </h3>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 ${getWebsiteColor(selectedUser.websiteSource.id)}`}>
-                  <Globe className="h-3 w-3 mr-1" />
-                  {selectedUser.websiteSource.name}
-                </span>
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span className="text-lg font-semibold text-blue-600">
+                    {selectedUser.bookingNumber}
+                  </span>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <Globe className="h-4 w-4 mr-1" />
+                    {selectedUser.websiteSource.name}
+                  </span>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    {selectedUser.flightBookingType.toUpperCase()}
+                  </span>
+                </div>
               </div>
               <button
                 onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full"
               >
-                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                <X className="h-6 w-6" />
               </button>
             </div>
 
-            <div className="max-h-96 overflow-y-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                {/* Passenger Information */}
-                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-                  <h4 className="flex items-center text-sm sm:text-md font-semibold text-gray-800 mb-3">
-                    <User className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                    Passenger Information
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <p><strong>Name:</strong> {getPassengerName(selectedUser.entries)}</p>
-                    <p><strong>Email:</strong> {selectedUser.email}</p>
-                    <p><strong>Phone:</strong> {selectedUser.phone}</p>
-                    {selectedUser.entries && selectedUser.entries[0] && (
-                      <p><strong>Gender:</strong> {selectedUser.entries[0].gender}</p>
-                    )}
-                    <p><strong>Total Passenger:</strong> {selectedUser.entries.length}</p>
+            <div className="max-h-[80vh] overflow-y-auto space-y-6">
+              {/* Traveler Details Section */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="flex items-center text-lg font-semibold text-gray-800 mb-4">
+                  <Users className="h-5 w-5 mr-2 text-blue-600" />
+                  Traveler(s) Details
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Email:</p>
+                    <p className="font-medium text-blue-600">{selectedUser.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Total Passenger:</p>
+                    <p className="font-medium text-blue-600">{selectedUser.entries.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Billing No:</p>
+                    <p className="font-medium">{selectedUser.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Card No:</p>
+                    <p className="font-medium">{selectedUser.cardNumber.toString().replace(/(\d{4})(?=\d)/g, '$1-')}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Booking Reference:</p>
+                    <p className="font-bold text-lg text-blue-600">{selectedUser.bookingNumber}</p>
                   </div>
                 </div>
+              </div>
 
-                {/* Flight Information */}
-                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-                  <h4 className="flex items-center text-sm sm:text-md font-semibold text-gray-800 mb-3">
-                    <Plane className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                    Flight Information
-                  </h4>
-                  <div className="space-y-2">
-                    <p><strong>From:</strong> {selectedUser.flightFrom}</p>
-                    <p><strong>To:</strong> {selectedUser.flightTo}</p>
-                    <p><strong>Carrier:</strong> {selectedUser.flightCarrierCode}</p>
-                    <p><strong>Type:</strong> {selectedUser.flightBookingType}</p>
-                    <p><strong>Departure:</strong> {selectedUser.departureDate}</p>
+              {/* Itinerary Details Section */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="flex items-center text-lg font-semibold text-gray-800 mb-4">
+                  <Plane className="h-5 w-5 mr-2 text-gray-600" />
+                  Itinerary Details
+                </h4>
+
+                {selectedUser.flightFulldetails.itineraries.map((itinerary: [], index) => (
+                  <div key={index} className="mb-6">
+                    <div className="bg-white p-4 rounded-lg border">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Flight Detail */}
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                            <Plane className="h-6 w-6 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold">{getCarrierName(selectedUser.flightCarrierCode)}</p>
+                            <p className="text-sm text-gray-600">Flight no: {itinerary.segments[0].number}</p>
+                          </div>
+                        </div>
+
+                        {/* Departure Airport */}
+                        <div>
+                          <p className="font-semibold text-gray-800">Departure</p>
+                          <p className="text-lg font-medium">{itinerary.segments[0].departure.iataCode}</p>
+                          <p className="text-sm text-gray-600">Terminal: {itinerary.segments[0].departure.terminal || 'N/A'}</p>
+                          <p className="text-red-600 font-medium">
+                            {new Date(itinerary.segments[0].departure.at).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}, {formatTime(itinerary.segments[0].departure.at)}
+                          </p>
+                        </div>
+
+                        {/* Arrival Airport */}
+                        <div>
+                          <p className="font-semibold text-gray-800">Arrival</p>
+                          <p className="text-lg font-medium">{itinerary.segments[0].arrival.iataCode}</p>
+                          <p className="text-sm text-gray-600">Terminal: {itinerary.segments[0].arrival.terminal || 'N/A'}</p>
+                          <p className="text-red-600 font-medium">
+                            {new Date(itinerary.segments[0].arrival.at).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}, {formatTime(itinerary.segments[0].arrival.at)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex items-center justify-between text-sm text-gray-600">
+                          <span>Duration: {formatDuration(itinerary.duration)}</span>
+                          <span>Aircraft: {itinerary.segments[0].aircraft.code}</span>
+                          <span>Stops: {itinerary.segments[0].numberOfStops}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
+              </div>
 
+              {/* Reservation Details Section */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="flex items-center text-lg font-semibold text-gray-800 mb-4">
+                  <User className="h-5 w-5 mr-2 text-gray-600" />
+                  Reservation Details
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full bg-white rounded-lg">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">First Name</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Middle Name</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Last Name</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Gender</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedUser.entries.map((passenger, index) => (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                          <td className="px-4 py-3 text-sm">{passenger.firstName}</td>
+                          <td className="px-4 py-3 text-sm">{passenger.middleName || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{passenger.lastName}</td>
+                          <td className="px-4 py-3 text-sm">{passenger.gender}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Price Summary */}
+              <div className="bg-green-50 flex p-4 rounded-lg border border-green-200">
+                <h4 className="flex items-center text-lg font-semibold text-gray-800 mb-4">
+                  <CreditCard className="h-5 w-5 mr-2 text-green-600" />
+                  Total Price
+                </h4>
+                <div className="text-3xl ml-4 font-bold text-green-600">
+                  $ {selectedUser.price.toFixed(2)}
+                </div>
+                {selectedUser.fareIncrease && (
+                  <div className="text-sm text-red-600 mt-1">
+                    (Includes fare increase: ${selectedUser.fareIncrease})
+                  </div>
+                )}
+              </div>
+
+              {/* Additional Booking Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Payment Information */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="flex items-center text-md font-semibold text-gray-800 mb-3">
                     <CreditCard className="h-5 w-5 mr-2" />
                     Payment Information
                   </h4>
-                  <div className="space-y-2">
-                    <p><strong>Total Price:</strong> ${selectedUser.price}</p>
-                    <p><strong>Card Holder:</strong> {selectedUser.nameOnCard}</p>
-                    <p><strong>Card Number:</strong> {selectedUser.cardNumber}</p>
-                    <p><strong>CVV:</strong> {selectedUser.cvv}</p>
-                    <p><strong>Expiry:</strong> {selectedUser.expMonth}/{selectedUser.expYear}</p>
-                    {selectedUser.fareIncrease && (
-                      <p><strong>Fare Increase:</strong> ${selectedUser.fareIncrease}</p>
-                    )}
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Card Holder:</strong> {selectedUser?.nameOnCard}</p>
+                    <p><strong>Card Number:</strong> {selectedUser.cardNumber.toString().replace(/(\d{4})(?=\d)/g, '$1-')}</p>
+                    <p><strong>CVV:</strong> {selectedUser?.cvv}</p>
+                    <p><strong>Expiry:</strong> {selectedUser.expMonth.toString().padStart(2, '0')}/{selectedUser.expYear}</p>
                   </div>
                 </div>
 
@@ -583,22 +745,22 @@ const MultiSiteFlightUsersTable: React.FC = () => {
                     <Calendar className="h-5 w-5 mr-2" />
                     Booking Information
                   </h4>
-                  <div className="space-y-2">
+                  <div className="space-y-2 text-sm">
                     <p><strong>Booking Number:</strong> {selectedUser.bookingNumber}</p>
+                    <p><strong>Booking Type:</strong> {selectedUser.flightBookingType.toUpperCase()}</p>
                     <p><strong>Created:</strong> {formatDate(selectedUser.createdAt)}</p>
                     <p><strong>Updated:</strong> {formatDate(selectedUser.updatedAt)}</p>
+                    <p><strong>Total Passengers:</strong> {selectedUser.entries.length}</p>
                   </div>
                 </div>
               </div>
-
-              {/* Flight Details */}
-              <PassengersTable selectedUser={selectedUser} />
             </div>
 
-            <div className="mt-6 flex justify-end">
+            {/* Footer */}
+            <div className="mt-6 pt-4 border-t flex justify-end">
               <button
                 onClick={closeModal}
-                className="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="px-6 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors"
               >
                 Close
               </button>
@@ -606,6 +768,19 @@ const MultiSiteFlightUsersTable: React.FC = () => {
           </div>
         </div>
       )}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm.show && deleteConfirm.user && (

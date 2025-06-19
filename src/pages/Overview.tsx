@@ -208,14 +208,33 @@ const Overview: React.FC = () => {
     const averageTicketCost = totalBookings > 0 ? totalSales / totalBookings : 0;
 
     // Payment method distribution
-    const paymentMethodCounts: Record<string, number> = {};
+
+    const normalize = (str: string) =>
+      str
+        .normalize('NFKC') // Normalize unicode characters
+        .replace(/\u00A0/g, ' ') // Replace non-breaking space
+        .replace(/\s+/g, ' ')    // Collapse all whitespace to single space
+        .trim()
+        .toLowerCase();
+
+
+    const paymentMethodCounts: Record<string, { label: string, count: number }> = {};
     chargedSales.forEach(item => {
-      const method = item.paymentMethod || 'Unknown';
-      paymentMethodCounts[method] = (paymentMethodCounts[method] || 0) + 1;
+      const rawMethod = item.paymentMethod || 'Unknown';
+      const normalized = normalize(rawMethod);
+
+      if (!paymentMethodCounts[normalized]) {
+        paymentMethodCounts[normalized] = {
+          label: rawMethod.trim(), // or normalize casing if you prefer
+          count: 1
+        };
+      } else {
+        paymentMethodCounts[normalized].count += 1;
+      }
     });
 
-    const paymentMethods = Object.entries(paymentMethodCounts).map(([name, count]) => ({
-      name,
+    const paymentMethods = Object.values(paymentMethodCounts).map(({ label, count }) => ({
+      name: label,
       value: Math.round((count / chargedSales.length) * 100)
     }));
 
@@ -245,6 +264,7 @@ const Overview: React.FC = () => {
   };
 
   const metrics = processedData();
+
 
   // Generate chart data based on timeframe
   const getChartData = (): ChartConfig => {
@@ -908,6 +928,8 @@ const Overview: React.FC = () => {
       const mco = parseFloat(sale.ticketRequest?.mco || "0");
       return sum + (isNaN(mco) ? 0 : mco);
     }, 0);
+
+    const roundedTotalMCO = Math.round(totalMCO * 100) / 100;
     const totalSales = totalMCO * 0.85;
     const totalBookings = mySales.length;
 
@@ -948,7 +970,7 @@ const Overview: React.FC = () => {
             },
             {
               title: "Total MCO",
-              value: `$${totalMCO}`,
+              value: `$${roundedTotalMCO}`,
               colorIndex: 2
             },
           ].map((card, index) => (

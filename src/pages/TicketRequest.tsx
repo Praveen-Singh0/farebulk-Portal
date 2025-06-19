@@ -45,7 +45,7 @@ export default function Submission() {
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [statusData, setStatusData] = useState({
-    status: 'Pending',
+    status: '',
     paymentMethod: '',
     remark: ''
   });
@@ -159,6 +159,15 @@ export default function Submission() {
   const handleStatusUpdate = async () => {
     if (!selectedRequest) return;
 
+    if (!statusData.status) {
+      alert('Status are required.');
+      return;
+    }
+    if (!statusData.paymentMethod) {
+      alert('Payment Method are required.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
@@ -204,7 +213,7 @@ export default function Submission() {
     setSelectedRequest(null);
     setCurrentSlide(0);
     setStatusData({
-      status: 'Pending',
+      status: '',
       paymentMethod: '',
       remark: ''
     });
@@ -554,7 +563,7 @@ export default function Submission() {
                           onChange={(e) => setStatusData(prev => ({ ...prev, status: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                         >
-                          <option value="Pending">Pending</option>
+                          <option value="">Select Status</option>
                           <option value="Charge">Charge</option>
                           <option value="Not Charge">Not Charge</option>
                         </select>
@@ -562,7 +571,7 @@ export default function Submission() {
 
                       {/* Payment Method Selection */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method *</label>
                         <select
                           value={statusData.paymentMethod}
                           onChange={(e) =>

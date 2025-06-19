@@ -24,8 +24,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  console.log("user authContext :", user)
-
 
   useEffect(() => {
     const checkAuth = async (): Promise<void> => {
@@ -34,8 +32,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           withCredentials: true
         });
 
-
-        console.log("verify user response:", res);
 
         const { email, role, userName } = res.data.user;
 

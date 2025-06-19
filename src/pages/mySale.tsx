@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, RefreshCw, Eye, Calendar, DollarSign } from "lucide-react";
+import { Search, RefreshCw, Eye, Calendar, DollarSign, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import axios from "axios";
 import { useAuth } from '@/contexts/use-auth';
@@ -171,6 +171,25 @@ export default function MySale() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const handleDelete = async (id: string) => {
+  try {
+    const confirmDelete = window.confirm("Are you sure you want to delete this ticket status?");
+    if (!confirmDelete) return;
+
+    await axios.delete(`${import.meta.env.VITE_BASE_URL}/ticket-requests-status/${id}`, {
+      withCredentials: true
+    });
+
+    // Remove the deleted item from the state
+    setTicketStatuses(prev => prev.filter(status => status._id !== id));
+    setFilteredStatuses(prev => prev.filter(status => status._id !== id));
+  } catch (error) {
+    console.error("Failed to delete ticket request status:", error);
+    alert("Failed to delete ticket request status.");
+  }
+};
+
 
   // Calculate totals based on sale amounts
   const totalChargeTransactions = filteredStatuses.filter(
@@ -384,7 +403,7 @@ export default function MySale() {
                             {formatDate(status.updatedAt)}
                           </div>
                         </td>
-                        <td className="p-3 text-right">
+                        <td className="p-3 flex text-right">
                           <button
                             onClick={() => handleViewDetails(status)}
                             className="p-2 hover:bg-gray-100 rounded-md transition-colors"
@@ -392,6 +411,16 @@ export default function MySale() {
                           >
                             <Eye className="h-4 w-4 text-gray-600" />
                           </button>
+                          {user.role !== 'travel' && (
+                            <button
+                              onClick={() => handleDelete(status._id)}
+                              className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                              title="View Details"
+                            >
+                              <Trash2 className="h-4 w-4 text-gray-600" />
+                            </button>
+                          )}
+
                         </td>
                       </tr>
                     );
