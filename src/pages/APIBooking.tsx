@@ -47,7 +47,7 @@ interface FlightUser {
   flightCarrierCode: string;
   flightFrom: string;
   flightTo: string;
-  flightFulldetails?: any;
+  flightFulldetails?: FlightFullDetails;
   nameOnCard: string;
   price: number;
   updatedAt: string;
@@ -75,9 +75,33 @@ interface ApiResponse {
   fetchedAt: string;
 }
 
-interface PassengersTableProps {
-  selectedUser: FlightUser;
+interface Segment {
+  number: string;
+  aircraft: {
+    code: string;
+  };
+  numberOfStops: number;
+  departure: {
+    iataCode: string;
+    at: string;
+    terminal?: string;
+  };
+  arrival: {
+    iataCode: string;
+    at: string;
+    terminal?: string;
+  };
 }
+
+interface Itinerary {
+  duration: string;
+  segments: Segment[];
+}
+
+interface FlightFullDetails {
+  itineraries: Itinerary[];
+}
+
 
 
 const MultiSiteFlightUsersTable: React.FC = () => {
@@ -197,15 +221,6 @@ const MultiSiteFlightUsersTable: React.FC = () => {
   };
 
 
-  const getAirportName = (code: string): string => {
-    const airports: Record<string, string> = {
-      'ONT': 'Ontario International Airport',
-      'DEN': 'Denver International Airport',
-      'LAX': 'Los Angeles International Airport'
-    };
-    return airports[code] || code;
-  };
-
 
 
   const getCarrierName = (code: string): string => {
@@ -249,51 +264,7 @@ const MultiSiteFlightUsersTable: React.FC = () => {
   // }
 
 
-  const PassengersTable: React.FC<PassengersTableProps> = ({ selectedUser }) => {
-    if (!selectedUser || !selectedUser.entries || selectedUser.entries.length === 0) {
-      return <div className="text-gray-500">No passengers found</div>;
-    }
 
-    return (
-      <div className="bg-gray-100 p-3 sm:p-4 rounded-lg mt-4">
-        <h4 className="flex items-center text-sm sm:text-md font-semibold text-gray-800 mb-3">
-          <User className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-          All Passengers
-        </h4>
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium text-gray-700 border-b">ID</th>
-                <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium text-gray-700 border-b">First Name</th>
-                <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium text-gray-700 border-b hidden sm:table-cell">Middle Name</th>
-                <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium text-gray-700 border-b">Last Name</th>
-                <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium text-gray-700 border-b">Gender</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedUser.entries.map((passenger, index) => (
-                <tr key={passenger._id || passenger.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 border-b">{passenger.id}</td>
-                  <td className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 border-b">{passenger.firstName || '-'}</td>
-                  <td className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 border-b hidden sm:table-cell">{passenger.middleName || '-'}</td>
-                  <td className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 border-b">{passenger.lastName || '-'}</td>
-                  <td className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 border-b">
-                    <span className={`px-1 sm:px-2 py-1 rounded-full text-xs font-medium ${passenger.gender === 'Male' ? 'bg-blue-100 text-blue-800' :
-                      passenger.gender === 'Female' ? 'bg-pink-100 text-pink-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                      {passenger.gender}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
@@ -619,7 +590,7 @@ const MultiSiteFlightUsersTable: React.FC = () => {
                   Itinerary Details
                 </h4>
 
-                {selectedUser.flightFulldetails.itineraries.map((itinerary: [], index) => (
+                {selectedUser.flightFulldetails?.itineraries?.map((itinerary, index) => (
                   <div key={index} className="mb-6">
                     <div className="bg-white p-4 rounded-lg border">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
