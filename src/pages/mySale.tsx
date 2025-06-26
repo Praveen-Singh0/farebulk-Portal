@@ -129,14 +129,25 @@ export default function MySale() {
     }
   }, [user]);
 
-  // Format date helper
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string): string => {
     try {
-      return format(new Date(dateString), "MMM dd, yyyy 'at' hh:mm a");
+      const options: Intl.DateTimeFormatOptions = {
+        timeZone: 'America/New_York', // New York timezone (EST/EDT)
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      };
+
+      const formatter = new Intl.DateTimeFormat('en-US', options);
+      return formatter.format(new Date(dateString)); // e.g., "Jun 26, 2025, 02:35 AM"
     } catch {
       return dateString;
     }
   };
+
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -173,22 +184,22 @@ export default function MySale() {
   };
 
   const handleDelete = async (id: string) => {
-  try {
-    const confirmDelete = window.confirm("Are you sure you want to delete this ticket status?");
-    if (!confirmDelete) return;
+    try {
+      const confirmDelete = window.confirm("Are you sure you want to delete this ticket status?");
+      if (!confirmDelete) return;
 
-    await axios.delete(`${import.meta.env.VITE_BASE_URL}/ticket-requests-status/${id}`, {
-      withCredentials: true
-    });
+      await axios.delete(`${import.meta.env.VITE_BASE_URL}/ticket-requests-status/${id}`, {
+        withCredentials: true
+      });
 
-    // Remove the deleted item from the state
-    setTicketStatuses(prev => prev.filter(status => status._id !== id));
-    setFilteredStatuses(prev => prev.filter(status => status._id !== id));
-  } catch (error) {
-    console.error("Failed to delete ticket request status:", error);
-    alert("Failed to delete ticket request status.");
-  }
-};
+      // Remove the deleted item from the state
+      setTicketStatuses(prev => prev.filter(status => status._id !== id));
+      setFilteredStatuses(prev => prev.filter(status => status._id !== id));
+    } catch (error) {
+      console.error("Failed to delete ticket request status:", error);
+      alert("Failed to delete ticket request status.");
+    }
+  };
 
 
   // Calculate totals based on sale amounts

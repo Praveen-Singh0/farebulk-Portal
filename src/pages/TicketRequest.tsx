@@ -20,7 +20,7 @@ interface TicketRequest {
   cardNumber?: string;
   expiryDate?: string;
   cvv?: string;
-  date?: string;
+  date: string;
   time?: string;
   datetime?: string;
   consultant?: string;
@@ -126,6 +126,8 @@ export default function Submission() {
       return dateString;
     }
   };
+
+
 
 
 
@@ -365,7 +367,7 @@ export default function Submission() {
                         <div className="text-sm text-gray-500 px-2 py-1">MCO : {formatCurrency(request.mco)}</div>
                       </td>
                       <td className="p-3">
-                        <div className="text-sm text-gray-700">{formatDate(request.createdAt)}</div>
+                        <div className="text-sm text-gray-700">{request.date}  {request.time}</div>
                       </td>
                       <td className="p-3">
                         <div className="inline-block bg-yellow-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">

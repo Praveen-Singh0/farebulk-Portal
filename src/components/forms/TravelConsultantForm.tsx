@@ -34,12 +34,32 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
 
   const navigate = useNavigate();
 
-  const getTodayDate = () => new Date().toISOString().split('T')[0];
-  const getCurrentTime = () => new Date().toTimeString().slice(0, 5);
+
+  const getTodayDateEST = () => {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York', // New York time zone
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    return formatter.format(new Date()); // e.g., "2025-06-26"
+  };
+
+
+
+  const getCurrentTimeEST = () => {
+    const estDate = new Date().toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+    });
+    const date = new Date(estDate);
+    return date.toTimeString().slice(0, 5); // returns "HH:mm"
+  };
+
+
 
   const initialFormData: TravelConsultantFormData = {
-    date: getTodayDate(),
-    time: getCurrentTime(),
+    date: getTodayDateEST(),
+    time: getCurrentTimeEST(),
     passengerName: '',
     airlineCode: '',
     confirmationCode: '',

@@ -307,7 +307,7 @@ export default function Submission() {
                       </td>
                       <td className="p-3">
                         <div className="text-sm text-gray-700">
-                          {formatDate(request.createdAt)}
+                          {request.date} {request.time} 
                         </div>
                       </td>
                       <td className="p-3 text-right">

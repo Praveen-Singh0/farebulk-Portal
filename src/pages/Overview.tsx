@@ -28,6 +28,8 @@ interface TicketRequest {
   status?: string;
   ticketCost: string;
   mco: string;
+  date: string;
+  time: string;
   createdAt: string;
 }
 
@@ -353,6 +355,26 @@ const Overview: React.FC = () => {
 
     const recentSales = salesData.slice(0, 5); // Show only 5 rows
 
+    const formatDate = (dateString: string): string => {
+      try {
+        const options: Intl.DateTimeFormatOptions = {
+          timeZone: 'America/New_York', // New York timezone (EST/EDT)
+          year: 'numeric',
+          month: 'short',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        };
+    
+        const formatter = new Intl.DateTimeFormat('en-US', options);
+        return formatter.format(new Date(dateString)); // e.g., "Jun 26, 2025, 02:35 AM"
+      } catch {
+        return dateString;
+      }
+    };
+    
+
     return (
       <Card className="col-span-full">
         <CardHeader>
@@ -425,7 +447,7 @@ const Overview: React.FC = () => {
                     </td>
                     <td className="p-3">
                       <span className="text-sm text-gray-500">
-                        {new Date(item.updatedAt).toLocaleDateString()}
+                        {formatDate(item.updatedAt)}
                       </span>
                     </td>
                   </tr>
@@ -1042,7 +1064,7 @@ const Overview: React.FC = () => {
                           <div className="text-sm text-gray-500 px-2 py-1">MCO : {formatCurrency(request.mco)}</div>
                         </td>
                         <td className="p-3">
-                          <div className="text-sm text-gray-700">{formatDate(request.createdAt)}</div>
+                          <div className="text-sm text-gray-700">{request.date} {request.time}</div>
                         </td>
                         <td className="p-3">
                           <div className="inline-block bg-yellow-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">

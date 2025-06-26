@@ -157,9 +157,18 @@ const Dashboard: React.FC = () => {
     });
   };
 
-  // Format date for display
+
+  //EST time zone
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleString();
+    return new Date(dateString).toLocaleString('en-US', {
+      timeZone: 'America/New_York', // EST or EDT depending on the date
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
   };
 
   useEffect(() => {
