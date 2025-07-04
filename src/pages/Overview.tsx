@@ -171,7 +171,7 @@ const Overview: React.FC = () => {
           const currentMonth = dayjs().month(); // 0-indexed: January = 0
 
           // Filter data for current month only
-          const filteredData = data.filter((item) => {
+          const filteredData = data.filter((item: { createdAt: string | number | dayjs.Dayjs | Date | null | undefined; }) => {
             const itemDate = dayjs(item.createdAt);
             return itemDate.year() === currentYear && itemDate.month() === currentMonth;
           });
