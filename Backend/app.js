@@ -13,12 +13,13 @@ const authRoutes = require('./routes/authRoutes');
 
 const ticketRequestRoutes = require('./routes/ticketRequest');
 const ticketRequestStatusRoutes = require('./routes/ticketRequestStatusRoutes');
+const HandleAuthUSPayment = require('./routes/HandleAuthUSPayment');
 const multiSiteCrmRoutes = require('./routes/multiSiteCrm');
 
 
 const app = express();
 
-app.use(cookieParser());
+app.use(cookieParser()); 
 
 const corsOptions = {
   origin: process.env.CORS_DOMAIN,       
@@ -34,6 +35,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/ticket-requests', ticketRequestRoutes);
 app.use('/api/ticket-requests-status', ticketRequestStatusRoutes);
+app.use('/api/ticket-requests-AuthrizeUS', HandleAuthUSPayment);
 app.use('/api/items', itemRoutes);
 app.use('/api', multiSiteCrmRoutes);
 

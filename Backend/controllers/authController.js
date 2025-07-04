@@ -15,7 +15,8 @@ const generateAccessToken = (userId) => {
 // User Login
 const login = async (req, res) => {
   const { email, password } = req.body;
-  console.log("eeeeee", email)
+  console.log("email...", email)
+  console.log("password.....", password)
 
   try {
     const user = await User.findOne({ email });

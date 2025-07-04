@@ -5,6 +5,7 @@ import { Search, RefreshCw, Eye, X } from "lucide-react";
 import { format } from "date-fns";
 import axios from "axios";
 import { useAuth } from '@/contexts/use-auth';
+import { toast } from "../components/ui/use-toast";
 
 interface TicketRequest {
   _id: string;
@@ -77,7 +78,6 @@ export default function Submission() {
             ticket.consultant === user.email;
         }
 
-        console.log("ticket :", ticket)
 
         // Then filter by status - only show pending requests
         return hasAccess && ticket.status === 'Pending';
@@ -181,7 +181,6 @@ export default function Submission() {
         ticketRequest: selectedRequest // Include the full ticket request
       };
 
-      console.log('Sending update data:', updateData);
 
       const response = await axios.post(
         `${import.meta.env.VITE_BASE_URL}/ticket-requests-status/`,
@@ -209,6 +208,78 @@ export default function Submission() {
       setIsSubmitting(false);
     }
   };
+
+
+
+
+  const handleAuthUsPayment = async () => {
+    if (!selectedRequest) return;
+
+    try {
+      setIsSubmitting(true);
+
+      toast({
+        title: "Processing your payment on BACKEND...",
+        description: "We securely connect to Authorize.net.",
+        className: "bg-yellow-500 border border-yellow-200 text-white",
+      });
+
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      const updateData = {
+        ticketRequestId: selectedRequest._id,
+      };
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/ticket-requests-AuthrizeUS/`,
+        updateData,
+        {
+          withCredentials: true,
+        }
+      );
+
+
+      if (response.data.success) {
+        // ✅ Show success toast
+        toast({
+          title: "Payment successful!",
+          description: `Transaction ID: ${response.data.transactionId}`,
+          className: "bg-green-500 border border-green-200",
+        });
+
+        // Refresh ticket requests
+        await fetchTicketRequests();
+
+        // Close modal
+        closeModal();
+      } else {
+        // ❌ Show error toast
+        toast({
+          title: "Payment failed!",
+          description: response.data.message || "Something went wrong.",
+          className: "bg-red-500 border border-red-200",
+        });
+      }
+    } catch (error) {
+      console.error("Error payment:", error);
+
+      toast({
+        title: "Payment error",
+        description: "Transaction failed.",
+        className: "bg-red-500 border border-red-200",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
+
+
+
+
+
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -399,6 +470,10 @@ export default function Submission() {
       </div>
 
       {/* Modal - Keep the same modal code from previous response */}
+
+
+
+
       {
         isModalOpen && selectedRequest && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -604,20 +679,43 @@ export default function Submission() {
 
                     {/* Submit Button */}
                     <div className="flex justify-end">
-                      <button
-                        onClick={handleStatusUpdate}
-                        disabled={isSubmitting}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            Updating...
-                          </>
-                        ) : (
-                          'Submit'
-                        )}
-                      </button>
+                      {statusData.paymentMethod === 'Authorize US' ? (
+                        <button
+                          onClick={handleAuthUsPayment}
+                          disabled={isSubmitting}
+                          className="px-6 py-2 ml-2 bg-green-600 text-white rounded-md hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              Payment is Processing...
+                            </>
+                          ) : (
+                            filteredRequests.map((request) => (
+                              <>
+                                {formatCurrency(request.mco)} Authorize US
+                              </>
+                            ))
+                          )}
+
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleStatusUpdate}
+                          disabled={isSubmitting}
+                          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              Updating...
+                            </>
+                          ) : (
+                            'Submit'
+                          )}
+                        </button>
+                      )}
+
                     </div>
                   </div>
                 )}
@@ -646,6 +744,9 @@ export default function Submission() {
           </div>
         )
       }
+
+
+
     </div >
   );
 }

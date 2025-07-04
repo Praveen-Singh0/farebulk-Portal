@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Tooltip, Cell, Legend, ResponsiveContainer } from 'recharts';
 import SalesList from './SalesList';
+import dayjs from 'dayjs';
+
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -18,6 +20,7 @@ type TicketRequestStatus = {
     ticketCost: string;
     mco: string;
   };
+  createdAt: string;
   status: string;
   paymentMethod: string;
   updatedBy: string;
@@ -50,65 +53,76 @@ const SalesOverview = () => {
   const [consultantSales, setConsultantSales] = useState<ConsultantSale[]>([]);
   const [totalSales, setTotalSales] = useState<number>(0);
 
-  useEffect(() => {
-    const fetchSalesData = async () => {
-      try {
-        const response = await axios.get<{ data: TicketRequestStatus[] }>(
-          `${import.meta.env.VITE_BASE_URL}/ticket-requests-status`,
-          { withCredentials: true }
-        );
+useEffect(() => {
+  const fetchSalesData = async () => {
+    try {
+      const response = await axios.get<{ data: TicketRequestStatus[] }>(
+        `${import.meta.env.VITE_BASE_URL}/ticket-requests-status`,
+        { withCredentials: true }
+      );
 
-        const processed: SaleData[] = response.data.data.map((item) => {
-          const mco = parseFloat(item.ticketRequest.mco);
-          const saleAmount = mco * 0.85;
-          return {
-            consultant: item.ticketRequest.consultant,
-            passengerName: item.ticketRequest.passengerName,
-            passengerEmail: item.ticketRequest.passengerEmail,
-            ticketType: item.ticketRequest.ticketType,
-            confirmationCode: item.ticketRequest.confirmationCode,
-            ticketCostUSD: parseFloat(item.ticketRequest.ticketCost),
-            requestFor: item.ticketRequest.requestFor,
-            mcoUSD: mco,
-            saleAmount,
-            status: item.status,
-            paymentMethod: item.paymentMethod,
-            updatedBy: item.updatedBy,
-            updatedAt: item.updatedAt,
-          };
+      // Filter only current month's data first
+      const currentYear = dayjs().year();
+      const currentMonth = dayjs().month(); // 0-indexed
+
+      const filteredData = response.data.data.filter((item) => {
+        const itemDate = dayjs(item.createdAt);
+        return itemDate.year() === currentYear && itemDate.month() === currentMonth;
+      });
+
+      // Process only filtered data
+      const processed: SaleData[] = filteredData.map((item) => {
+        const mco = parseFloat(item.ticketRequest.mco);
+        const saleAmount = mco * 0.85;
+        return {
+          consultant: item.ticketRequest.consultant,
+          passengerName: item.ticketRequest.passengerName,
+          passengerEmail: item.ticketRequest.passengerEmail,
+          ticketType: item.ticketRequest.ticketType,
+          confirmationCode: item.ticketRequest.confirmationCode,
+          ticketCostUSD: parseFloat(item.ticketRequest.ticketCost),
+          requestFor: item.ticketRequest.requestFor,
+          mcoUSD: mco,
+          saleAmount,
+          status: item.status,
+          paymentMethod: item.paymentMethod,
+          updatedBy: item.updatedBy,
+          updatedAt: item.updatedAt,
+        };
+      });
+
+      setSalesData(processed);
+
+      // Total only for "Charge" status
+      const total = processed.reduce((sum, item) => {
+        if (item.status === "Charge") {
+          return sum + item.saleAmount;
+        }
+        return sum;
+      }, 0);
+      setTotalSales(total);
+
+      // Consultant-wise sales
+      const consultantMap: Record<string, number> = {};
+      processed
+        .filter((item) => item.status === "Charge")
+        .forEach((item) => {
+          consultantMap[item.consultant] = (consultantMap[item.consultant] || 0) + item.saleAmount;
         });
 
-        setSalesData(processed);
+      const consultantArray = Object.entries(consultantMap).map(([name, sales]) => ({
+        name,
+        sales,
+      }));
 
-        // Total only for items with status === "Charge"
-        const total = processed.reduce((sum, item) => {
-          if (item.status === "Charge") {
-            return sum + item.saleAmount;
-          }
-          return sum;
-        }, 0);
-        setTotalSales(total);
+      setConsultantSales(consultantArray);
+    } catch (error) {
+      console.error('Error fetching sales data:', error);
+    }
+  };
 
-        const consultantMap: Record<string, number> = {};
-        processed
-          .filter((item) => item.status === "Charge")
-          .forEach((item) => {
-            consultantMap[item.consultant] = (consultantMap[item.consultant] || 0) + item.saleAmount;
-          });
-
-        const consultantArray = Object.entries(consultantMap).map(([name, sales]) => ({
-          name,
-          sales,
-        }));
-
-        setConsultantSales(consultantArray);
-      } catch (error) {
-        console.error('Error fetching sales data:', error);
-      }
-    };
-
-    fetchSalesData();
-  }, []);
+  fetchSalesData();
+}, []);
 
   return (
     <div className="space-y-6">

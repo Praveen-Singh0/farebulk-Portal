@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Search, RefreshCw, Eye, Calendar, DollarSign, Trash2 } from "lucide-react";
-import { format } from "date-fns";
 import axios from "axios";
 import { useAuth } from '@/contexts/use-auth';
+import dayjs from 'dayjs';
+
 
 
 interface TicketRequestStatus {
@@ -58,24 +59,30 @@ export default function MySale() {
         withCredentials: true
       });
 
+      let userStatuses: TicketRequestStatus[] = response.data.data || [];
 
-      // Filter based on user role
-      let userStatuses = response.data.data || [];
+      // ✅ Filter by current month first
+      const currentYear = dayjs().year();
+      const currentMonth = dayjs().month();
 
-      // If not admin or ticket, filter by updatedBy field
+      userStatuses = userStatuses.filter((status: TicketRequestStatus) => {
+        const itemDate = dayjs(status.createdAt);
+        return itemDate.year() === currentYear && itemDate.month() === currentMonth;
+      });
+
+      // ✅ Then, filter based on user role
       if (user.role === 'travel') {
         // Show only requests handled by this travel consultant
-        userStatuses = userStatuses.filter((status: TicketRequestStatus) =>
+        userStatuses = userStatuses.filter((status) =>
           status.ticketRequest.consultant?.toLowerCase().trim() === user.userName?.toLowerCase().trim()
         );
       } else if (user.role !== 'admin' && user.role !== 'ticket') {
         // Default logic for other users
-        userStatuses = userStatuses.filter((status: TicketRequestStatus) =>
+        userStatuses = userStatuses.filter((status) =>
           status.updatedBy === user.email ||
           status.updatedBy === user.userName
         );
       }
-
 
       setTicketStatuses(userStatuses);
       setFilteredStatuses(userStatuses);
@@ -86,6 +93,7 @@ export default function MySale() {
       setLoading(false);
     }
   };
+
 
   const calculateDeduction = (mco: string | undefined) => {
     const mcoAmount = parseFloat(mco || '0') || 0;

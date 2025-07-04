@@ -4,6 +4,7 @@ import { RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/use-auth';
+import dayjs from 'dayjs';
 
 import axios from 'axios';
 
@@ -163,8 +164,21 @@ const Overview: React.FC = () => {
         });
 
         if (response.data.success) {
-          setSalesData(response.data.data);
+          const data = response.data.data;
+
+          // Get current year and month
+          const currentYear = dayjs().year();
+          const currentMonth = dayjs().month(); // 0-indexed: January = 0
+
+          // Filter data for current month only
+          const filteredData = data.filter((item) => {
+            const itemDate = dayjs(item.createdAt);
+            return itemDate.year() === currentYear && itemDate.month() === currentMonth;
+          });
+
+          setSalesData(filteredData);
         }
+
         setLoading(false);
       } catch (err) {
         console.error('Error fetching sales data:', err);
@@ -175,6 +189,7 @@ const Overview: React.FC = () => {
 
     fetchSalesData();
   }, []);
+
 
   // Helper functions for calculations
   const calculateDeduction = (mco?: string): number => {
@@ -366,14 +381,14 @@ const Overview: React.FC = () => {
           minute: '2-digit',
           hour12: true,
         };
-    
+
         const formatter = new Intl.DateTimeFormat('en-US', options);
         return formatter.format(new Date(dateString)); // e.g., "Jun 26, 2025, 02:35 AM"
       } catch {
         return dateString;
       }
     };
-    
+
 
     return (
       <Card className="col-span-full">
