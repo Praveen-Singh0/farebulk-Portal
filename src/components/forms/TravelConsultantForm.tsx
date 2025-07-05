@@ -11,11 +11,8 @@ import { RefreshCw, } from "lucide-react";
 interface TravelConsultantFormData {
   date: string;
   time: string;
-  passengerName: string;
   airlineCode: string;
   confirmationCode: string;
-  passengerEmail: string;
-  phoneNumber: string;
   ticketCost: string;
   mco: string;
   paymentMethod: string;
@@ -27,6 +24,15 @@ interface TravelConsultantFormData {
   ticketType: string;
   requestFor: string;
   status: string;
+  billingFirstName: string;
+  billingLastName: string;
+  billingPhone: string;
+  billingEmail: string;
+  billingAddress: string;
+  billingCity: string;
+  billingState: string;
+  billingZipCode: string;
+  billingCountry: string;
 }
 
 const TravelConsultantForm = ({ user }: { user: { email: string; role: string; userName?: string } }) => {
@@ -60,11 +66,8 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
   const initialFormData: TravelConsultantFormData = {
     date: getTodayDateEST(),
     time: getCurrentTimeEST(),
-    passengerName: '',
     airlineCode: '',
     confirmationCode: '',
-    passengerEmail: '',
-    phoneNumber: '',
     ticketCost: '',
     mco: '',
     paymentMethod: 'credit',
@@ -75,7 +78,16 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
     Desc: '',
     ticketType: '',
     requestFor: '',
-    status: 'Pending'
+    status: 'Pending',
+    billingFirstName: '',
+    billingLastName: '',
+    billingPhone: '',
+    billingEmail: '',
+    billingAddress: '',
+    billingCity: '',
+    billingState: '',
+    billingZipCode: '',
+    billingCountry: ''
   };
 
   const [formData, setFormData] = useState<TravelConsultantFormData>(initialFormData);
@@ -135,7 +147,7 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneNumber(e.target.value);
     if (formatted.replace(/\D/g, '').length <= 10) {
-      setFormData({ ...formData, phoneNumber: formatted });
+      setFormData({ ...formData, billingPhone: formatted });
     }
   };
 
@@ -194,6 +206,79 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
       return false;
     }
 
+    // Validate billing information
+    if (!formData.billingFirstName.trim()) {
+      toast({
+        title: "First Name Required",
+        description: "Please enter first name",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!formData.billingLastName.trim()) {
+      toast({
+        title: "Last Name Required",
+        description: "Please enter last name",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!formData.billingEmail.trim()) {
+      toast({
+        title: "Email Required",
+        description: "Please enter email address",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!formData.billingPhone.trim()) {
+      toast({
+        title: "Phone Number Required",
+        description: "Please enter phone number",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!formData.billingAddress.trim()) {
+      toast({
+        title: "Address Required",
+        description: "Please enter address",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!formData.billingCity.trim()) {
+      toast({
+        title: "City Required",
+        description: "Please enter city",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!formData.billingState.trim()) {
+      toast({
+        title: "State Required",
+        description: "Please enter state",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!formData.billingZipCode.trim()) {
+      toast({
+        title: "Zip Code Required",
+        description: "Please enter zip code",
+        variant: "destructive"
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -209,8 +294,15 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
       consultant: user.userName,
       datetime: `${formData.date} ${formData.time}`,
       cardNumber: formData.cardNumber.replace(/\s/g, ''),
-      phoneNumber: formData.phoneNumber.replace(/\D/g, ''),
+      billingPhone: formData.billingPhone.replace(/\D/g, ''),
+      // Create legacy fields for backward compatibility
+      passengerName: `${formData.billingFirstName} ${formData.billingLastName}`,
+      passengerEmail: formData.billingEmail,
+      phoneNumber: formData.billingPhone.replace(/\D/g, ''),
     };
+
+    console.log("submissionData...", submissionData) 
+
     setLoading(true)
     try {
       const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/ticket-requests`, submissionData, {
@@ -302,12 +394,47 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="passengerName">Passenger Name *</Label>
+            <Label htmlFor="billingFirstName">First Name *</Label>
             <Input
-              id="passengerName"
-              value={formData.passengerName}
-              onChange={(e) => setFormData({ ...formData, passengerName: e.target.value })}
-              placeholder="Enter full name"
+              id="billingFirstName"
+              value={formData.billingFirstName}
+              onChange={(e) => setFormData({ ...formData, billingFirstName: e.target.value })}
+              placeholder="John"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="billingLastName">Last Name *</Label>
+            <Input
+              id="billingLastName"
+              value={formData.billingLastName}
+              onChange={(e) => setFormData({ ...formData, billingLastName: e.target.value })}
+              placeholder="Doe"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="billingPhone">Phone *</Label>
+            <Input
+              id="billingPhone"
+              type="tel"
+              value={formData.billingPhone}
+              onChange={handlePhoneChange}
+              placeholder="(123) 456-7890"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="billingEmail">Email *</Label>
+            <Input
+              id="billingEmail"
+              type="email"
+              value={formData.billingEmail}
+              onChange={(e) => setFormData({ ...formData, billingEmail: e.target.value })}
+              placeholder="john.doe@example.com"
               required
             />
           </div>
@@ -339,30 +466,6 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="passengerEmail">Passenger Email *</Label>
-            <Input
-              id="passengerEmail"
-              type="email"
-              value={formData.passengerEmail}
-              onChange={(e) => setFormData({ ...formData, passengerEmail: e.target.value })}
-              placeholder="passenger@example.com"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phoneNumber">Phone Number *</Label>
-            <Input
-              id="phoneNumber"
-              type="tel"
-              value={formData.phoneNumber}
-              onChange={handlePhoneChange}
-              placeholder="(123) 456-7890"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="ticketCost">Ticket Cost (USD) *</Label>
             <Input
               id="ticketCost"
@@ -388,6 +491,68 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
               placeholder="0.00"
               required
             />
+          </div>
+        </div>
+
+  {/* Customer Billing Information Section */}
+        <div className="mt-8 p-6 border rounded-lg bg-gray-50">
+          <h3 className="text-lg font-medium mb-4">Customer Billing Information</h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="billingAddress">Address *</Label>
+              <Input
+                id="billingAddress"
+                value={formData.billingAddress}
+                onChange={(e) => setFormData({ ...formData, billingAddress: e.target.value })}
+                placeholder="123 Main Street, Apt 4B"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="billingCity">City *</Label>
+              <Input
+                id="billingCity"
+                value={formData.billingCity}
+                onChange={(e) => setFormData({ ...formData, billingCity: e.target.value })}
+                placeholder="New York"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="billingState">State *</Label>
+              <Input
+                id="billingState"
+                value={formData.billingState}
+                onChange={(e) => setFormData({ ...formData, billingState: e.target.value })}
+                placeholder="NY"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="billingZipCode">Zip Code *</Label>
+              <Input
+                id="billingZipCode"
+                value={formData.billingZipCode}
+                onChange={(e) => setFormData({ ...formData, billingZipCode: e.target.value })}
+                placeholder="10001"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="billingState">Country *</Label>
+              <Input
+                id="billingState"
+                value={formData.billingCountry}
+                onChange={(e) => setFormData({ ...formData, billingCountry: e.target.value })}
+                placeholder="United State"
+                required
+              />
+            </div>
           </div>
         </div>
 
@@ -481,7 +646,7 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
 
         <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
           <div className="space-y-2">
-            <Label htmlFor="Desc">Request Description *</Label>
+            <Label htmlFor="Desc">Description *</Label>
             <Input
               id="Desc"
               type="text"

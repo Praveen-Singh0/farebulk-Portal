@@ -12,6 +12,7 @@ interface TicketRequest {
   passengerName: string;
   passengerEmail: string;
   phoneNumber: string;
+  airlineCode: string;
   confirmationCode: string;
   ticketCost: string;
   status: string;
@@ -28,6 +29,11 @@ interface TicketRequest {
   ticketType?: string;
   requestFor?: string;
   Desc?: string;
+  billingZipCode: string;
+  billingCountry: string;
+  billingState: string;
+  billingCity: string;
+  billingAddress: string; 
   createdAt: string;
   updatedAt: string;
   __v: number;
@@ -275,12 +281,6 @@ export default function Submission() {
   };
 
 
-
-
-
-
-
-
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedRequest(null);
@@ -425,7 +425,9 @@ export default function Submission() {
                         <div className="text-sm text-gray-500">{request.passengerEmail}</div>
                       </td>
                       <td className="p-3">
-                        <div className="font-medium text-gray-900">{request.ticketType || "N/A"}</div>
+                        <div className="font-medium text-gray-900"> {request.ticketType || "N/A"}
+                          {request.airlineCode ? ` - ${request.airlineCode}` : ""}
+                        </div>
                         <div className="text-sm text-gray-500">{request.requestFor || "N/A"}</div>
                       </td>
                       <td className="p-3">
@@ -474,276 +476,444 @@ export default function Submission() {
 
 
 
-      {
-        isModalOpen && selectedRequest && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  {'Ticket Request Details'}
-                </h3>
-                <button
-                  onClick={closeModal}
-                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-                >
-                  <X className="h-5 w-5 text-gray-500" />
-                </button>
+{isModalOpen && selectedRequest && (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+      {/* Enhanced Modal Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900">
+            Ticket Request Details
+          </h3>
+        </div>
+        <button
+          onClick={closeModal}
+          className="p-2 hover:bg-white/50 rounded-full transition-all duration-200 group"
+        >
+          <X className="h-6 w-6 text-gray-500 group-hover:text-gray-700" />
+        </button>
+      </div>
+
+      {/* Modal Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-8">
+          {currentSlide === 0 ? (
+            <div className="space-y-8">
+              {/* Progress indicator */}
+              <div className="flex items-center justify-center space-x-2 mb-8">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <div className="w-12 h-0.5 bg-gray-300"></div>
+                <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
               </div>
 
-              {/* Modal Content - Same as before */}
-              <div className="p-6">
-                {currentSlide === 0 ? (
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Passenger Information */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-medium text-gray-900 border-b pb-2">Passenger Information</h4>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                        <p className="text-sm text-gray-900">{selectedRequest.passengerName}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <p className="text-sm text-gray-900">{selectedRequest.passengerEmail}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                        <p className="text-sm text-gray-900">{selectedRequest.phoneNumber}</p>
-                      </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+                {/* Passenger Information */}
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
                     </div>
-
-                    {/* Ticket Information */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-medium text-gray-900 border-b pb-2">Ticket Information</h4>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Request For</label>
-                        <p className="text-sm text-gray-900">{selectedRequest.ticketType || "N/A"}</p>
-                        <p className="text-sm text-gray-900">{selectedRequest.requestFor || "N/A"}</p>
-
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Confirmation Code</label>
-                        <p className="text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded inline-block">
-                          {selectedRequest.confirmationCode}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <p className="text-sm text-gray-900">{selectedRequest.Desc || "N/A"}</p>
-                      </div>
-                    </div>
-
-                    {/* Cost Information */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-medium text-gray-900 border-b pb-2">Cost Information</h4>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Ticket Cost</label>
-                        <p className="text-sm text-gray-900 font-medium text-green-600">
-                          {formatCurrency(selectedRequest.ticketCost)}
-                        </p>
-                      </div>
-                      {selectedRequest.mco && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">MCO</label>
-                          <p className="text-sm text-gray-900">{formatCurrency(selectedRequest.mco)}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Payment Information */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-medium text-gray-900 border-b pb-2">Payment Information</h4>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-                        <p className="text-sm text-gray-900 capitalize">{selectedRequest.paymentMethod || "N/A"}</p>
-                      </div>
-                      {selectedRequest.cardholderName && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
-                          <p className="text-sm text-gray-900">{selectedRequest.cardholderName}</p>
-                        </div>
-                      )}
-                      {selectedRequest.cardNumber && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
-                          <p className="text-sm text-gray-900 font-mono">{maskCardNumber(selectedRequest.cardNumber)}</p>
-                        </div>
-                      )}
-                      {selectedRequest.expiryDate && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                          <p className="text-sm text-gray-900">{selectedRequest.expiryDate}</p>
-                        </div>
-                      )}
-                      {selectedRequest.cvv && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
-                          <p className="text-sm text-gray-900">{selectedRequest.cvv}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Booking Information */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-medium text-gray-900 border-b pb-2">Booking Information</h4>
-                      {selectedRequest.date && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                          <p className="text-sm text-gray-900">{selectedRequest.date}</p>
-                        </div>
-                      )}
-                      {selectedRequest.time && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                          <p className="text-sm text-gray-900">{selectedRequest.time}</p>
-                        </div>
-                      )}
-                      {selectedRequest.consultant && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Consultant</label>
-                          <p className="text-sm text-gray-900">{selectedRequest.consultant}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* System Information */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-medium text-gray-900 border-b pb-2">System Information</h4>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Created At</label>
-                        <p className="text-sm text-gray-900">{formatDate(selectedRequest.createdAt)}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Updated At</label>
-                        <p className="text-sm text-gray-900">{formatDate(selectedRequest.updatedAt)}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Request ID</label>
-                        <p className="text-sm text-gray-900 font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-                          {selectedRequest._id}
-                        </p>
-                      </div>
-                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900">Passenger Information</h4>
                   </div>
-                ) : (
-
-                  <div className="space-y-6">
-                    <h4 className="text-lg font-medium text-gray-900 border-b pb-2">Update Ticket Status</h4>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Status Selection */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
-                        <select
-                          value={statusData.status}
-                          onChange={(e) => setStatusData(prev => ({ ...prev, status: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                        >
-                          <option value="">Select Status</option>
-                          <option value="Charge">Charge</option>
-                          <option value="Not Charge">Not Charge</option>
-                        </select>
-                      </div>
-
-                      {/* Payment Method Selection */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method *</label>
-                        <select
-                          value={statusData.paymentMethod}
-                          onChange={(e) =>
-                            setStatusData((prev) => ({ ...prev, paymentMethod: e.target.value }))
-                          }
-                          className="w-full border border-gray-300 rounded-md px-3 py-2"
-                        >
-                          <option value="">Select Payment Method</option>
-                          <option value="Stripe UK">Stripe UK</option>
-                          <option value="Stripe India">Stripe India</option>
-                          <option value="Authorize US">Authorize US</option>
-                        </select>
-
-                      </div>
-                    </div>
-
-                    {/* Remark Field */}
+                  <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Remark</label>
-                      <textarea
-                        value={statusData.remark}
-                        onChange={(e) => setStatusData(prev => ({ ...prev, remark: e.target.value }))}
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                        placeholder="Enter your remarks here..."
-                      />
+                      <label className="block text-sm font-medium text-gray-600 mb-2">Name</label>
+                      <p className="text-gray-900 font-medium bg-white/60 px-3 py-2 rounded-lg">
+                        {selectedRequest.passengerName}
+                      </p>
                     </div>
-
-                    {/* Submit Button */}
-                    <div className="flex justify-end">
-                      {statusData.paymentMethod === 'Authorize US' ? (
-                        <button
-                          onClick={handleAuthUsPayment}
-                          disabled={isSubmitting}
-                          className="px-6 py-2 ml-2 bg-green-600 text-white rounded-md hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                              Payment is Processing...
-                            </>
-                          ) : (
-                            filteredRequests.map((request) => (
-                              <>
-                                {formatCurrency(request.mco)} Authorize US
-                              </>
-                            ))
-                          )}
-
-                        </button>
-                      ) : (
-                        <button
-                          onClick={handleStatusUpdate}
-                          disabled={isSubmitting}
-                          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                              Updating...
-                            </>
-                          ) : (
-                            'Submit'
-                          )}
-                        </button>
-                      )}
-
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">Email</label>
+                      <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg break-all">
+                        {selectedRequest.passengerEmail}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">Phone Number</label>
+                      <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                        {selectedRequest.phoneNumber}
+                      </p>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
 
-              {/* Modal Footer - Update to show Next button only on first slide */}
-              <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-                {currentSlide === 0 && (
-                  <button
-                    onClick={handleNext}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Next
-                  </button>
-                )}
-                {currentSlide === 1 && (
-                  <button
-                    onClick={() => setCurrentSlide(0)}
-                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  >
-                    Back
-                  </button>
-                )}
+                {/* Ticket Information */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900">Ticket Information</h4>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">Request For</label>
+                      <div className="bg-white/60 px-3 py-2 rounded-lg">
+                        <p className="text-gray-900">{selectedRequest.ticketType || "N/A"}</p>
+                        <p className="text-gray-900">{selectedRequest.requestFor || "N/A"}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">Confirmation Code</label>
+                      <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
+                        {selectedRequest.confirmationCode}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">Description</label>
+                      <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                        {selectedRequest.Desc || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">Ticket Cost</label>
+                      <p className="text-2xl font-bold text-green-600 bg-white/60 px-3 py-2 rounded-lg">
+                        {formatCurrency(selectedRequest.ticketCost)}
+                      </p>
+                    </div>
+
+                    {selectedRequest.mco && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">MCO</label>
+                        <p className="text-xl font-semibold text-purple-600 bg-white/60 px-3 py-2 rounded-lg">
+                          {formatCurrency(selectedRequest.mco)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+
+                {/* Payment Information */}
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-100">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900">Payment Information</h4>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">Payment Method</label>
+                      <p className="text-gray-900 capitalize bg-white/60 px-3 py-2 rounded-lg">
+                        {selectedRequest.paymentMethod || "N/A"}
+                      </p>
+                    </div>
+                    {selectedRequest.cardholderName && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">Cardholder Name</label>
+                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                          {selectedRequest.cardholderName}
+                        </p>
+                      </div>
+                    )}
+                    {selectedRequest.cardNumber && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">Card Number</label>
+                        <p className="text-gray-900 font-mono bg-white/60 px-3 py-2 rounded-lg">
+                          {maskCardNumber(selectedRequest.cardNumber)}
+                        </p>
+                      </div>
+                    )}
+                    {selectedRequest.expiryDate && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">Expiry Date</label>
+                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                          {selectedRequest.expiryDate}
+                        </p>
+                      </div>
+                    )}
+                    {selectedRequest.cvv && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">CVV</label>
+                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                          {selectedRequest.cvv}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Booking Information */}
+                <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl p-6 border border-teal-100">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900">Booking Information</h4>
+                  </div>
+                  <div className="space-y-4">
+                    {selectedRequest.date && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">Date</label>
+                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                          {selectedRequest.date}
+                        </p>
+                      </div>
+                    )}
+                    {selectedRequest.time && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">Time</label>
+                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                          {selectedRequest.time}
+                        </p>
+                      </div>
+                    )}
+                    {selectedRequest.consultant && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">Consultant</label>
+                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                          {selectedRequest.consultant}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Billing Information */}
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900">Billing Details</h4>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">Address</label>
+                      <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                        {selectedRequest.billingAddress || "N/A"}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">City</label>
+                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                          {selectedRequest.billingCity || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">State</label>
+                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                          {selectedRequest.billingState || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">Country</label>
+                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                          {selectedRequest.billingCountry || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">Zip Code</label>
+                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                          {selectedRequest.billingZipCode || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* System Information */}
+                <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-2xl p-6 border border-gray-200">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-8 h-8 bg-gray-500 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900">System Information</h4>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">Created At</label>
+                      <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                        {formatDate(selectedRequest.createdAt)}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">Updated At</label>
+                      <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                        {formatDate(selectedRequest.updatedAt)}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">Request ID</label>
+                      <p className="text-gray-900 font-mono text-xs bg-white/60 px-3 py-2 rounded-lg break-all">
+                        {selectedRequest._id}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )
-      }
+          ) : (
+            <div className="max-w-2xl mx-auto">
+              {/* Progress indicator */}
+              <div className="flex items-center justify-center space-x-2 mb-8">
+                <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                <div className="w-12 h-0.5 bg-gray-300"></div>
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              </div>
+
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-100">
+                <div className="flex items-center space-x-3 mb-8">
+                  <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h4 className="text-2xl font-bold text-gray-900">Update Ticket Status</h4>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Status Selection */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-3">Status *</label>
+                      <select
+                        value={statusData.status}
+                        onChange={(e) => setStatusData(prev => ({ ...prev, status: e.target.value }))}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white/80"
+                      >
+                        <option value="">Select Status</option>
+                        <option value="Charge">Charge</option>
+                        <option value="Not Charge">Not Charge</option>
+                      </select>
+                    </div>
+
+                    {/* Payment Method Selection */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-3">Payment Method *</label>
+                      <select
+                        value={statusData.paymentMethod}
+                        onChange={(e) =>
+                          setStatusData((prev) => ({ ...prev, paymentMethod: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white/80"
+                      >
+                        <option value="">Select Payment Method</option>
+                        <option value="Stripe UK">Stripe UK</option>
+                        <option value="Stripe India">Stripe India</option>
+                        <option value="Authorize US">Authorize US</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Remark Field */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Remark</label>
+                    <textarea
+                      value={statusData.remark}
+                      onChange={(e) => setStatusData(prev => ({ ...prev, remark: e.target.value }))}
+                      rows={5}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white/80 resize-none"
+                      placeholder="Enter your remarks here..."
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="flex justify-end pt-4">
+                    {statusData.paymentMethod === 'Authorize US' ? (
+                      <button
+                        onClick={handleAuthUsPayment}
+                        disabled={isSubmitting}
+                        className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-all duration-200 shadow-lg hover:shadow-xl"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                            Payment Processing...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Authorize US
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleStatusUpdate}
+                        disabled={isSubmitting}
+                        className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-all duration-200 shadow-lg hover:shadow-xl"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                            Updating...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Submit
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Enhanced Modal Footer */}
+      <div className="flex items-center justify-between px-8 py-4 bg-gray-50 border-t border-gray-200">
+        <div className="flex items-center space-x-2 text-sm text-gray-500">
+          <span>Step {currentSlide + 1} of 2</span>
+        </div>
+        <div className="flex items-center space-x-3">
+          {currentSlide === 1 && (
+            <button
+              onClick={() => setCurrentSlide(0)}
+              className="px-6 py-2 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 flex items-center space-x-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>Back</span>
+            </button>
+          )}
+          {currentSlide === 0 && (
+            <button
+              onClick={handleNext}
+              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl"
+            >
+              <span>Next</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
 
 

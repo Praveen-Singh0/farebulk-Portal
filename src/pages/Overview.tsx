@@ -32,6 +32,7 @@ interface TicketRequest {
   date: string;
   time: string;
   createdAt: string;
+  airlineCode: string;
 }
 
 interface SalesDataItem {
@@ -425,9 +426,11 @@ const Overview: React.FC = () => {
                         <div className="text-sm text-gray-500">{item.ticketRequest?.passengerEmail || 'N/A'}</div>
                       </div>
                     </td>
-                    <td className="p-3">
+                    <td className="p-3"> 
                       <div>
-                        <div className="font-medium text-gray-900">{item.ticketRequest?.ticketType || 'N/A'}</div>
+                         <div className="font-medium text-gray-900"> {item.ticketRequest?.ticketType || "N/A"}
+                          {item.ticketRequest?.airlineCode ? ` - ${item.ticketRequest?.airlineCode}` : ""}
+                        </div>
                         <div className="text-sm text-gray-500">{item.ticketRequest?.requestFor || 'N/A'}</div>
                       </div>
                     </td>
@@ -574,7 +577,7 @@ const Overview: React.FC = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              title: "Total Sales",
+              title: "Final MCO",
               value: `$${displayMetrics.totalSales.toFixed(2)}`,
               colorIndex: 0
             },
@@ -584,12 +587,7 @@ const Overview: React.FC = () => {
               colorIndex: 1
             },
             {
-              title: "Total Bookings",
-              value: displayMetrics.totalBookings.toString(),
-              colorIndex: 2
-            },
-            {
-              title: "Average Sale Amount",
+              title: "Average Per Day",
               value: `$${displayMetrics.averageTicketCost.toFixed(2)}`,
               colorIndex: 3
             }
@@ -776,11 +774,7 @@ const Overview: React.FC = () => {
               value: `$${totalRevenue.toLocaleString()}`,
               colorIndex: 0
             },
-            {
-              title: "Total Bookings",
-              value: totalBookings,
-              colorIndex: 1
-            },
+
             {
               title: "Confirmed Bookings",
               value: confirmedBookings,
@@ -996,15 +990,11 @@ const Overview: React.FC = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              title: "Total Sales",
+              title: "Final MCO",
               value: `$${totalSales.toFixed(2)}`,
               colorIndex: 0
             },
-            {
-              title: "Total Bookings",
-              value: totalBookings,
-              colorIndex: 1
-            },
+
             {
               title: "Total MCO",
               value: `$${roundedTotalMCO}`,
@@ -1066,7 +1056,9 @@ const Overview: React.FC = () => {
                           <div className="text-sm text-gray-500">{request.passengerEmail}</div>
                         </td>
                         <td className="p-3">
-                          <div className="font-medium text-gray-900">{request.ticketType || "N/A"}</div>
+                          <div className="font-medium text-gray-900"> {request.ticketType || "N/A"}
+                            {request.airlineCode ? ` - ${request.airlineCode}` : ""}
+                          </div>
                           <div className="text-sm text-gray-500">{request.requestFor || "N/A"}</div>
                         </td>
                         <td className="p-3">

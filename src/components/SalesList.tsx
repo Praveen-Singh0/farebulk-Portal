@@ -11,6 +11,7 @@ type SaleData = {
   requestFor: string;
   mcoUSD: number;
   saleAmount: number;
+  airlineCode: string;
   status: string;
   paymentMethod: string;
   updatedBy: string;
@@ -23,6 +24,8 @@ type Props = {
 
 const SalesList = ({ saleData = [] }: Props) => {
   const [searchTerm, setSearchTerm] = useState('');
+
+  console.log("sale data", saleData)
 
   const filteredData = saleData
     .filter((sale) => sale.status === 'Charge')
@@ -184,7 +187,7 @@ const SalesList = ({ saleData = [] }: Props) => {
                 <td>${sale.consultant}</td>
                 <td>${sale.passengerName}</td>
                 <td>${sale.passengerEmail}</td>
-                <td>${sale.ticketType}</td>
+                <td>${sale.ticketType} ${sale.airlineCode}</td>
                 <td>${sale.requestFor}</td>
                 <td>${sale.confirmationCode}</td>
                 <td>$${sale.mcoUSD.toFixed(2)}</td>
@@ -203,64 +206,15 @@ const SalesList = ({ saleData = [] }: Props) => {
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
-    
+
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
     }, 250);
   };
 
-  // Sample data for demonstration
-  const sampleData: SaleData[] = [
-    {
-      consultant: "John Smith",
-      passengerName: "Alice Johnson",
-      passengerEmail: "alice.johnson@email.com",
-      ticketType: "Round Trip",
-      confirmationCode: "ABC123",
-      ticketCostUSD: 450.00,
-      requestFor: "Business Travel",
-      mcoUSD: 50.00,
-      saleAmount: 500.00,
-      status: "Charge",
-      paymentMethod: "Credit Card",
-      updatedBy: "System",
-      updatedAt: "2025-06-26T10:30:00Z"
-    },
-    {
-      consultant: "Sarah Davis",
-      passengerName: "Bob Wilson",
-      passengerEmail: "bob.wilson@email.com",
-      ticketType: "One Way",
-      confirmationCode: "XYZ789",
-      ticketCostUSD: 280.00,
-      requestFor: "Vacation",
-      mcoUSD: 30.00,
-      saleAmount: 310.00,
-      status: "Charge",
-      paymentMethod: "Debit Card",
-      updatedBy: "Admin",
-      updatedAt: "2025-06-25T14:15:00Z"
-    },
-    {
-      consultant: "Mike Chen",
-      passengerName: "Carol Brown",
-      passengerEmail: "carol.brown@email.com",
-      ticketType: "Round Trip",
-      confirmationCode: "DEF456",
-      ticketCostUSD: 750.00,
-      requestFor: "Family Visit",
-      mcoUSD: 75.00,
-      saleAmount: 825.00,
-      status: "Charge",
-      paymentMethod: "Credit Card",
-      updatedBy: "Manager",
-      updatedAt: "2025-06-24T09:45:00Z"
-    }
-  ];
 
-  const dataToUse = saleData.length > 0 ? saleData : sampleData;
-  const finalFilteredData = dataToUse
+  const finalFilteredData = saleData
     .filter((sale) => sale.status === 'Charge')
     .filter((sale) =>
       Object.values(sale).some((val) =>
@@ -274,7 +228,7 @@ const SalesList = ({ saleData = [] }: Props) => {
         <h2 className="text-xl font-semibold text-gray-900">
           Recent Sales ({finalFilteredData.length} showing)
         </h2>
-        
+
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -286,7 +240,7 @@ const SalesList = ({ saleData = [] }: Props) => {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
           </div>
-          
+
           <div className="flex gap-2">
             <button
               onClick={downloadPDF}
@@ -296,7 +250,7 @@ const SalesList = ({ saleData = [] }: Props) => {
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">PDF</span>
             </button>
-            
+
             <button
               onClick={downloadExcel}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
@@ -333,7 +287,10 @@ const SalesList = ({ saleData = [] }: Props) => {
                   <div className="text-gray-500 text-xs">{sale.passengerEmail}</div>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="font-medium">{sale.ticketType}</div>
+
+                  <div className="font-medium text-gray-900"> {sale.ticketType || "N/A"}
+                    {sale.airlineCode ? ` - ${sale.airlineCode}` : ""}
+                  </div>
                   <div className="text-xs text-gray-500">{sale.requestFor}</div>
                 </td>
                 <td className="px-4 py-3 font-mono text-sm">{sale.confirmationCode}</td>
@@ -343,13 +300,12 @@ const SalesList = ({ saleData = [] }: Props) => {
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      sale.status === 'Charge'
-                        ? 'bg-green-100 text-green-800'
-                        : sale.status === 'Pending'
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${sale.status === 'Charge'
+                      ? 'bg-green-100 text-green-800'
+                      : sale.status === 'Pending'
                         ? 'bg-yellow-100 text-yellow-800'
                         : 'bg-blue-100 text-blue-800'
-                    }`}
+                      }`}
                   >
                     {sale.status}
                   </span>
@@ -372,7 +328,7 @@ const SalesList = ({ saleData = [] }: Props) => {
 
       <div className="px-4 py-3 border-t bg-gray-50">
         <div className="flex justify-between items-center text-sm text-gray-600">
-          <span>Total Sales: ${finalFilteredData.reduce((sum, sale) => sum + sale.saleAmount, 0).toFixed(2)}</span>
+          <span>Final MCO: ${finalFilteredData.reduce((sum, sale) => sum + sale.saleAmount, 0).toFixed(2)}</span>
           <span>Total MCO: ${finalFilteredData.reduce((sum, sale) => sum + sale.mcoUSD, 0).toFixed(2)}</span>
         </div>
       </div>
