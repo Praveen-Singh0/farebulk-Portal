@@ -587,6 +587,11 @@ const Overview: React.FC = () => {
               colorIndex: 1
             },
             {
+              title: "Total Bookings",
+              value: displayMetrics.totalBookings.toString(),
+              colorIndex: 2
+            },
+            {
               title: "Average Per Day",
               value: `$${displayMetrics.averageTicketCost.toFixed(2)}`,
               colorIndex: 3
