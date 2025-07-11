@@ -5,6 +5,8 @@ import { Search, RefreshCw, Eye, X } from "lucide-react";
 import { format } from "date-fns";
 import axios from "axios";
 import { useAuth } from '@/contexts/use-auth';
+import { useToast } from '../components/ui/use-toast';
+
 
 
 interface TicketRequest {
@@ -48,6 +50,8 @@ export default function Submission() {
   const [selectedRequest, setSelectedRequest] = useState<TicketRequest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+
+    const { toast } = useToast();
 
   const fetchTicketRequests = async () => {
     try {
@@ -149,12 +153,12 @@ export default function Submission() {
     setIsModalOpen(true);
   };
 
-  // Handle edit
-  // const handleEdit = (request: TicketRequest) => {
-  //   setSelectedRequest(request);
-  //   setIsEditMode(true);
-  //   setIsModalOpen(true);
-  // };
+  const handleEdit = (request: TicketRequest) => {
+    setSelectedRequest(request);
+    setIsEditMode(true);
+    setIsModalOpen(true);
+  };
+
 
   // Close modal
   const closeModal = () => {
@@ -162,6 +166,47 @@ export default function Submission() {
     setSelectedRequest(null);
     setIsEditMode(false);
   };
+
+
+  const handleSave = async () => {
+  if (!selectedRequest) return;
+
+  try {
+    await axios.put(`${import.meta.env.VITE_BASE_URL}/ticket-requests/${selectedRequest._id}`, selectedRequest, {
+      withCredentials: true,
+    });
+
+    // Update local state
+    setTicketRequests((prev) =>
+      prev.map((req) => (req._id === selectedRequest._id ? selectedRequest : req))
+    );
+    setFilteredRequests((prev) =>
+      prev.map((req) => (req._id === selectedRequest._id ? selectedRequest : req))
+    );
+
+    // Show toast
+    toast({
+      title: "Ticket updated",
+      description: `The ticket request for ${selectedRequest.passengerName || "Passenger"} has been successfully updated.`,
+      className: "bg-green-500 border border-green-200 text-white",
+    });
+
+    // Close modal and reset states
+    setIsModalOpen(false);
+    setIsEditMode(false);
+    setSelectedRequest(null);
+  } catch (err) {
+    console.error("Failed to update ticket", err);
+
+    toast({
+      title: "Update failed",
+      description: "An error occurred while updating the ticket. Please try again.",
+      className: "bg-red-500 border border-red-200 text-white",
+    });
+  }
+};
+
+
 
   // Error state
   if (error) {
@@ -324,6 +369,17 @@ export default function Submission() {
                           >
                             <Eye className="h-4 w-4 text-gray-600" />
                           </button>
+                          <button
+                            onClick={() => handleEdit(request)}
+                            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                            title="Edit Ticket"
+                          >
+                            <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m-1-1v2m-6 4h12M5 13h14m-7 4h2m-1-1v2" />
+                            </svg>
+                          </button>
+
+
                         </div>
                       </td>
                     </tr>
@@ -379,21 +435,44 @@ export default function Submission() {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">Name</label>
-                        <p className="text-gray-900 font-medium bg-white/60 px-3 py-2 rounded-lg">
-                          {selectedRequest.passengerName}
-                        </p>
+                        {isEditMode ? (
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 border rounded"
+                            value={selectedRequest.passengerName}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, passengerName: e.target.value })}
+                          />
+                        ) : (
+                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">{selectedRequest.passengerName || "N/A"}</p>
+
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">Email</label>
-                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg break-all">
-                          {selectedRequest.passengerEmail}
-                        </p>
+                        {isEditMode ? (
+                          <input
+                            type="email"
+                            className="w-full px-3 py-2 border rounded"
+                            value={selectedRequest.passengerEmail}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, passengerEmail: e.target.value })}
+                          />
+                        ) : (
+                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg break-all">{selectedRequest.passengerEmail || "N/A"}</p>
+                        )}
                       </div>
+
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">Phone</label>
-                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                          {selectedRequest.phoneNumber}
-                        </p>
+                        {isEditMode ? (
+                          <input
+                            type="tel"
+                            className="w-full px-3 py-2 border rounded"
+                            value={selectedRequest.phoneNumber}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, phoneNumber: e.target.value })}
+                          />
+                        ) : (
+                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">{selectedRequest.phoneNumber || "N/A"}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -411,23 +490,61 @@ export default function Submission() {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">Ticket Type</label>
-                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                          {selectedRequest.ticketType}
-                        </p>
+                        {isEditMode ? (
+                          <select
+                            className="w-full px-3 py-2 border rounded"
+                            value={selectedRequest.ticketType}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, ticketType: e.target.value })}
+                          >
+                            <option value="">Select Ticket Type</option>
+                            <option value="Hotel">Hotel</option>
+                            <option value="Amtrack">Amtrack</option>
+                            <option value="Car Rental">Car Rental</option>
+                            <option value="Airline">Airline</option>
+                          </select>
+                        ) : (
+                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                            {selectedRequest.ticketType || "N/A"}
+                          </p>
+                        )}
                       </div>
+
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">Request For</label>
-                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                          {selectedRequest.requestFor}
-                        </p>
+                        {isEditMode ? (
+                          <select
+                            className="w-full px-3 py-2 border rounded"
+                            value={selectedRequest.requestFor}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, requestFor: e.target.value })}
+                          >
+                            <option value="">Select Request For</option>
+                            <option value="New booking">New booking</option>
+                            <option value="Cancellation">Cancellation</option>
+                            <option value="Changes">Changes</option>
+                            <option value="Others">Others</option>
+                          </select>
+                        ) : (
+                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">{selectedRequest.requestFor || "N/A"}</p>
+                        )}
                       </div>
+
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">Confirmation Code</label>
-                        <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
-                          {selectedRequest.confirmationCode}
-                        </p>
+                        {isEditMode ? (
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 border rounded font-mono"
+                            value={selectedRequest.confirmationCode}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, confirmationCode: e.target.value })}
+                          />
+                        ) : (
+                          <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
+                            {selectedRequest.confirmationCode || "N/A"}
+                          </p>
+                        )}
                       </div>
                     </div>
+
                   </div>
 
                   {/* Financial Information */}
@@ -505,36 +622,87 @@ export default function Submission() {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">Address</label>
-                        <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                          {selectedRequest.billingAddress || "N/A"}
-                        </p>
+
+                        {isEditMode ? (
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 border rounded font-mono"
+                            value={selectedRequest.billingAddress}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, billingAddress: e.target.value })}
+                          />
+                        ) : (
+                          <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
+                            {selectedRequest.billingAddress || "N/A"}
+                          </p>
+                        )}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-600 mb-2">City</label>
-                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                            {selectedRequest.billingCity || "N/A"}
-                          </p>
+                          {isEditMode ? (
+                            <input
+                              type="text"
+                              className="w-full px-3 py-2 border rounded font-mono"
+                              value={selectedRequest.billingCity}
+                              onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, billingCity: e.target.value })}
+                            />
+                          ) : (
+                            <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
+                              {selectedRequest.billingCity || "N/A"}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-600 mb-2">State</label>
-                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                            {selectedRequest.billingState || "N/A"}
-                          </p>
+
+                          {isEditMode ? (
+                            <input
+                              type="text"
+                              className="w-full px-3 py-2 border rounded font-mono"
+                              value={selectedRequest.billingState}
+                              onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, billingState: e.target.value })}
+                            />
+                          ) : (
+                            <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
+                              {selectedRequest.billingState || "N/A"}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-600 mb-2">Country</label>
-                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                            {selectedRequest.billingCountry || "N/A"}
-                          </p>
+
+                          {isEditMode ? (
+                            <input
+                              type="text"
+                              className="w-full px-3 py-2 border rounded font-mono"
+                              value={selectedRequest.billingCountry}
+                              onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, billingCountry: e.target.value })}
+                            />
+                          ) : (
+                            <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
+                              {selectedRequest.billingCountry || "N/A"}
+                            </p>
+                          )}
+
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-600 mb-2">Zip Code</label>
-                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                            {selectedRequest.billingZipCode || "N/A"}
-                          </p>
+
+                          {isEditMode ? (
+                            <input
+                              type="text"
+                              className="w-full px-3 py-2 border rounded font-mono"
+                              value={selectedRequest.billingZipCode}
+                              onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, billingZipCode: e.target.value })}
+                            />
+                          ) : (
+                            <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
+                              {selectedRequest.billingZipCode || "N/A"}
+                            </p>
+                          )}
+
                         </div>
                       </div>
                     </div>
@@ -557,38 +725,76 @@ export default function Submission() {
                           {selectedRequest.paymentMethod || "N/A"}
                         </p>
                       </div>
-                      {selectedRequest.cardholderName && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-600 mb-2">Cardholder Name</label>
-                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                            {selectedRequest.cardholderName}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">Cardholder Name</label>
+
+                        {isEditMode ? (
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 border rounded font-mono"
+                            value={selectedRequest.cardholderName}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, cardholderName: e.target.value })}
+                          />
+                        ) : (
+                          <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
+                            {selectedRequest.cardholderName || ""}
                           </p>
-                        </div>
-                      )}
-                      {selectedRequest.cardNumber && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-600 mb-2">Card Number</label>
-                          <p className="text-gray-900 font-mono bg-white/60 px-3 py-2 rounded-lg">
-                            {maskCardNumber(selectedRequest.cardNumber)}
+                        )}
+
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">Card Number</label>
+
+                        {isEditMode ? (
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 border rounded font-mono"
+                            value={selectedRequest.cardNumber}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, cardNumber: e.target.value })}
+                          />
+                        ) : (
+                          <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
+                            {selectedRequest.cardNumber || "N/A"}
                           </p>
-                        </div>
-                      )}
-                      {selectedRequest.expiryDate && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-600 mb-2">Expiry Date</label>
-                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                            {selectedRequest.expiryDate}
+                        )}
+
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">Expiry Date</label>
+
+                        {isEditMode ? (
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 border rounded font-mono"
+                            value={selectedRequest.expiryDate}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, expiryDate: e.target.value })}
+                          />
+                        ) : (
+                          <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
+                            {selectedRequest.expiryDate || "N/A"}
                           </p>
-                        </div>
-                      )}
-                      {selectedRequest.cvv && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-600 mb-2">CVV</label>
-                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                            {selectedRequest.cvv}
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">CVV</label>
+                        {isEditMode ? (
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 border rounded font-mono"
+                            value={selectedRequest.cvv}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, cvv: e.target.value })}
+                          />
+                        ) : (
+                          <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
+                            {selectedRequest.cvv || "N/A"}
                           </p>
-                        </div>
-                      )}
+                        )}
+
+                      </div>
+
                     </div>
                   </div>
 
@@ -632,6 +838,15 @@ export default function Submission() {
                 <span>Sale Transaction Details</span>
               </div>
               <div className="flex items-center space-x-3">
+                {isEditMode && (
+                  <button
+                    onClick={handleSave}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
+                  >
+                    Save Changes
+                  </button>
+                )}
+
                 <button
                   onClick={closeModal}
                   className="px-6 py-2 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 flex items-center space-x-2"

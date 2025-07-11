@@ -187,7 +187,7 @@ const SalesList = ({ saleData = [] }: Props) => {
                 <td>${sale.consultant}</td>
                 <td>${sale.passengerName}</td>
                 <td>${sale.passengerEmail}</td>
-                <td>${sale.ticketType} ${sale.airlineCode}</td>
+                <td>${sale.ticketType} ${sale.airlineCode ? sale.airlineCode : ''}</td>
                 <td>${sale.requestFor}</td>
                 <td>${sale.confirmationCode}</td>
                 <td>$${sale.mcoUSD.toFixed(2)}</td>

@@ -13,7 +13,7 @@ const create = async (req, res) => {
 };
 
 // Get all ticket requests
-const getAll = async (req, res) => { 
+const getAll = async (req, res) => {
   try {
     const requests = await TicketRequest.find().sort({ createdAt: -1 });
     res.status(200).json(requests);
@@ -24,18 +24,31 @@ const getAll = async (req, res) => {
 };
 
 
-// Upadte Status of ticket 
-const updateStatus = async (req, res) => {
+// Update a ticket request
+const update = async (req, res) => {
   try {
+    const requestId = req.params.id;
+    const updatedData = req.body;
 
+    const updatedRequest = await TicketRequest.findByIdAndUpdate(
+      requestId,
+      updatedData,
+      { new: true }
+    );
+
+    if (!updatedRequest) {
+      return res.status(404).json({ message: 'Ticket request not found' });
+    }
+
+    res.status(200).json(updatedRequest);
   } catch (err) {
-
-
+    console.error('Error updating ticket request:', err);
+    res.status(500).json({ message: 'Server error while updating ticket request' });
   }
 };
 
 module.exports = {
   create,
   getAll,
-  updateStatus
+  update
 };
