@@ -51,7 +51,7 @@ export default function Submission() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
-    const { toast } = useToast();
+  const { toast } = useToast();
 
   const fetchTicketRequests = async () => {
     try {
@@ -169,42 +169,42 @@ export default function Submission() {
 
 
   const handleSave = async () => {
-  if (!selectedRequest) return;
+    if (!selectedRequest) return;
 
-  try {
-    await axios.put(`${import.meta.env.VITE_BASE_URL}/ticket-requests/${selectedRequest._id}`, selectedRequest, {
-      withCredentials: true,
-    });
+    try {
+      await axios.put(`${import.meta.env.VITE_BASE_URL}/ticket-requests/${selectedRequest._id}`, selectedRequest, {
+        withCredentials: true,
+      });
 
-    // Update local state
-    setTicketRequests((prev) =>
-      prev.map((req) => (req._id === selectedRequest._id ? selectedRequest : req))
-    );
-    setFilteredRequests((prev) =>
-      prev.map((req) => (req._id === selectedRequest._id ? selectedRequest : req))
-    );
+      // Update local state
+      setTicketRequests((prev) =>
+        prev.map((req) => (req._id === selectedRequest._id ? selectedRequest : req))
+      );
+      setFilteredRequests((prev) =>
+        prev.map((req) => (req._id === selectedRequest._id ? selectedRequest : req))
+      );
 
-    // Show toast
-    toast({
-      title: "Ticket updated",
-      description: `The ticket request for ${selectedRequest.passengerName || "Passenger"} has been successfully updated.`,
-      className: "bg-green-500 border border-green-200 text-white",
-    });
+      // Show toast
+      toast({
+        title: "Ticket updated",
+        description: `The ticket request for ${selectedRequest.passengerName || "Passenger"} has been successfully updated.`,
+        className: "bg-green-500 border border-green-200 text-white",
+      });
 
-    // Close modal and reset states
-    setIsModalOpen(false);
-    setIsEditMode(false);
-    setSelectedRequest(null);
-  } catch (err) {
-    console.error("Failed to update ticket", err);
+      // Close modal and reset states
+      setIsModalOpen(false);
+      setIsEditMode(false);
+      setSelectedRequest(null);
+    } catch (err) {
+      console.error("Failed to update ticket", err);
 
-    toast({
-      title: "Update failed",
-      description: "An error occurred while updating the ticket. Please try again.",
-      className: "bg-red-500 border border-red-200 text-white",
-    });
-  }
-};
+      toast({
+        title: "Update failed",
+        description: "An error occurred while updating the ticket. Please try again.",
+        className: "bg-red-500 border border-red-200 text-white",
+      });
+    }
+  };
 
 
 
@@ -560,15 +560,37 @@ export default function Submission() {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">Ticket Cost</label>
-                        <p className="text-xl font-bold text-purple-600 bg-white/60 px-3 py-2 rounded-lg">
+
+                        {isEditMode ? (
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 border rounded"
+                            value={selectedRequest.ticketCost}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, ticketCost: e.target.value })}
+                          />
+                        ) : (
+                          <p className="text-xl font-bold text-purple-600 bg-white/60 px-3 py-2 rounded-lg">
                           {formatCurrency(selectedRequest.ticketCost || '0')}
                         </p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">MCO Amount</label>
-                        <p className="text-xl font-bold text-blue-600 bg-white/60 px-3 py-2 rounded-lg">
+
+                        {isEditMode ? (
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 border rounded"
+                            value={selectedRequest.mco}
+                            onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, mco: e.target.value })}
+                          />
+                        ) : (
+                          <p className="text-xl font-bold text-blue-600 bg-white/60 px-3 py-2 rounded-lg">
                           {formatCurrency(selectedRequest.mco || '0')}
                         </p>
+
+                        )}
+
                       </div>
                     </div>
                   </div>
