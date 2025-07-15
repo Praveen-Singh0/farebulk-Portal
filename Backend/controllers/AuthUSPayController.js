@@ -4,11 +4,6 @@ const TicketRequest = require('../models/TicketRequest');
 const { User } = require('../models/User');
 require('dotenv').config();
 
-const apiLoginKey = process.env.AUTHUSLOGINID;
-const transactionKey = process.env.AUTHUSTRANSACTIONKEY; 
-
-console.log('apiLoginKey:', JSON.stringify(apiLoginKey));
-console.log('transactionKey:', JSON.stringify(transactionKey));
 
 function formatExpiryDate(expiry) {
   if (!expiry || !expiry.includes('/')) return expiry;
@@ -21,6 +16,16 @@ const authorizeUsPayment = async (req, res) => {
   try {
     const { ticketRequestId } = req.body;
 
+    let apiLoginKey = process.env.AUTHUSLOGINID;
+    let transactionKey = process.env.AUTHUSTRANSACTIONKEY;
+
+
+    if (req.body.paymentMethod === 'Flight Services') {
+      apiLoginKey = process.env.FLIGHT_LOGIN_ID;
+      transactionKey = process.env.FLIGHT_TRANSACTION_KEY;
+    }
+
+   
     if (!ticketRequestId) {
       return res.status(400).json({ success: false, message: 'ticketRequestId is required' });
     }
@@ -47,7 +52,7 @@ const authorizeUsPayment = async (req, res) => {
 
     const paymentType = new APIContracts.PaymentType();
     paymentType.setCreditCard(creditCard);
- 
+  
     const amount = parseFloat(ticketRequest.mco);
     if (isNaN(amount)) {
       return res.status(400).json({ success: false, message: 'Invalid amount format' });
@@ -63,13 +68,13 @@ const authorizeUsPayment = async (req, res) => {
     billTo.setZip(ticketRequest.billingZipCode || '');
     billTo.setCountry(ticketRequest.billingCountry || '');
     billTo.setPhoneNumber(ticketRequest.billingPhone || ticketRequest.phoneNumber || '');
-    
+
     // Ensure email is properly set
     const customerEmail = ticketRequest.billingEmail || ticketRequest.passengerEmail || '';
     if (customerEmail) {
       billTo.setEmail(customerEmail);
     }
-    
+
     console.log('Setting billing email:', customerEmail);
 
     // Add custom fields for ticket information using correct XML structure
@@ -80,7 +85,7 @@ const authorizeUsPayment = async (req, res) => {
           value: ticketRequest.ticketType || ''
         },
         {
-          name: 'Request For', 
+          name: 'Request For',
           value: ticketRequest.requestFor || ''
         },
         {
@@ -103,7 +108,7 @@ const authorizeUsPayment = async (req, res) => {
     transactionRequest.setPayment(paymentType);
     transactionRequest.setAmount(amount);
     transactionRequest.setBillTo(billTo);
-    
+
     // Set user fields using the correct structure
     transactionRequest.setUserFields(userFields);
 

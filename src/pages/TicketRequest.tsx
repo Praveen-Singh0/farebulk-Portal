@@ -242,6 +242,8 @@ export default function Submission() {
 
       const updateData = {
         ticketRequestId: selectedRequest._id,
+        paymentMethod: statusData.paymentMethod,
+
       };
 
       const response = await axios.post(
@@ -849,7 +851,7 @@ export default function Submission() {
                           </div>
 
                           {/* Payment Method Selection */}
-                          <div>
+                          <div className="pb-6 z-50">
                             <label className="block text-sm font-semibold text-gray-700 mb-3">Payment Method *</label>
                             <select
                               value={statusData.paymentMethod}
@@ -861,7 +863,8 @@ export default function Submission() {
                               <option value="">Select Payment Method</option>
                               <option value="Stripe UK">Stripe UK</option>
                               <option value="Stripe India">Stripe India</option>
-                              <option value="Authorize US">Authorize US</option>
+                              <option value="Authorize US">Authorize US - Airticketspot</option>
+                              <option value="Flight Services">Authorize US - Flight Services</option>
                             </select>
                           </div>
                         </div>
@@ -878,6 +881,7 @@ export default function Submission() {
                           />
                         </div>
 
+                        {/* Submit Button */}
                         {/* Submit Button */}
                         <div className="flex justify-end pt-4">
                           {statusData.paymentMethod === 'Authorize US' ? (
@@ -896,7 +900,27 @@ export default function Submission() {
                                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                   </svg>
-                                  Authorize US
+                                  Authorize US - Airticketspot
+                                </>
+                              )}
+                            </button>
+                          ) : statusData.paymentMethod === 'Flight Services' ? (
+                            <button
+                              onClick={handleAuthUsPayment}
+                              disabled={isSubmitting}
+                              className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-all duration-200 shadow-lg hover:shadow-xl"
+                            >
+                              {isSubmitting ? (
+                                <>
+                                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                                  Payment Processing...
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  Authorize US - Flight Services
                                 </>
                               )}
                             </button>
@@ -922,6 +946,7 @@ export default function Submission() {
                             </button>
                           )}
                         </div>
+
                       </div>
                     </div>
                   </div>

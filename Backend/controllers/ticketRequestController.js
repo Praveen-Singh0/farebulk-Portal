@@ -12,6 +12,24 @@ const create = async (req, res) => {
   }
 };
 
+const remove = async (req, res) => {
+  try {
+    const requestId = req.params.id;
+
+    const deletedRequest = await TicketRequest.findByIdAndDelete(requestId);
+
+    if (!deletedRequest) {
+      return res.status(404).json({ message: 'Ticket request not found' });
+    }
+
+    res.status(200).json({ message: 'Ticket request deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting ticket request:', err);
+    res.status(500).json({ message: 'Server error while deleting ticket request' });
+  }
+};
+
+
 // Get all ticket requests
 const getAll = async (req, res) => {
   try {
@@ -50,5 +68,6 @@ const update = async (req, res) => {
 module.exports = {
   create,
   getAll,
-  update
+  update,
+  remove
 };

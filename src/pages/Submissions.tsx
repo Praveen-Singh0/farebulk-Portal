@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, RefreshCw, Eye, X } from "lucide-react";
+import { Search, RefreshCw, Eye, Copy, Trash2, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import axios from "axios";
 import { useAuth } from '@/contexts/use-auth';
 import { useToast } from '../components/ui/use-toast';
+
 
 
 
@@ -158,6 +159,71 @@ export default function Submission() {
     setIsEditMode(true);
     setIsModalOpen(true);
   };
+
+  const handleDelete = async (request: TicketRequest) => {
+    try {
+      if (!window.confirm("Are you sure you want to delete this request?")) return;
+
+      const response = await axios.delete(
+        `${import.meta.env.VITE_BASE_URL}/ticket-requests/${request._id}`,
+        { withCredentials: true }
+      );
+
+      if (response.status === 200) {
+        toast({
+          title: "Deleted successfully",
+          description: response.data.message,
+          className: "bg-green-500 border border-green-200 text-white",
+        });
+
+        // Refresh list
+        await fetchTicketRequests();
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+
+      toast({
+        title: "Error deleting",
+        description: "Something went wrong",
+        className: "bg-red-500 border border-red-200 text-white",
+      });
+    }
+  };
+
+  const handleDuplicate = async (request: TicketRequest) => {
+    try {
+      // Remove fields that should not be copied (id, timestamps, etc.)
+      const { _id, createdAt, updatedAt, __v, ...copyData } = request;
+
+      // Create new request
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/ticket-requests`,
+        copyData,
+        { withCredentials: true }
+      );
+
+      if (response.status === 201) {
+        toast({
+          title: "Duplicated successfully",
+          description: `New request for ${response.data.passengerName || "Passenger"} created.`,
+          className: "bg-green-500 border border-green-200 text-white",
+        });
+
+        // Refresh list
+        await fetchTicketRequests();
+      }
+    } catch (error) {
+      console.error("Duplicate error:", error);
+
+      toast({
+        title: "Error duplicating",
+        description: "Something went wrong",
+        className: "bg-red-500 border border-red-200 text-white",
+      });
+    }
+  };
+
+
 
 
   // Close modal
@@ -374,11 +440,25 @@ export default function Submission() {
                             className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                             title="Edit Ticket"
                           >
-                            <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m-1-1v2m-6 4h12M5 13h14m-7 4h2m-1-1v2" />
-                            </svg>
+                            <Pencil className="h-4 w-4 text-gray-600" />
                           </button>
 
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => handleDelete(request)}
+                            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                            title="Delete Ticket"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            onClick={() => handleDuplicate(request)}
+                            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                            title="Duplicate Ticket"
+                          >
+                            <Copy className="h-4 w-4 text-gray-600" />
+                          </button>
 
                         </div>
                       </td>
@@ -570,8 +650,8 @@ export default function Submission() {
                           />
                         ) : (
                           <p className="text-xl font-bold text-purple-600 bg-white/60 px-3 py-2 rounded-lg">
-                          {formatCurrency(selectedRequest.ticketCost || '0')}
-                        </p>
+                            {formatCurrency(selectedRequest.ticketCost || '0')}
+                          </p>
                         )}
                       </div>
                       <div>
@@ -586,8 +666,8 @@ export default function Submission() {
                           />
                         ) : (
                           <p className="text-xl font-bold text-blue-600 bg-white/60 px-3 py-2 rounded-lg">
-                          {formatCurrency(selectedRequest.mco || '0')}
-                        </p>
+                            {formatCurrency(selectedRequest.mco || '0')}
+                          </p>
 
                         )}
 
@@ -777,7 +857,7 @@ export default function Submission() {
                           />
                         ) : (
                           <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
-                            {selectedRequest.cardNumber || "N/A"}
+                            {maskCardNumber(selectedRequest.cardNumber || 'N/A')}
                           </p>
                         )}
 
