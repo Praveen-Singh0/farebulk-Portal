@@ -104,7 +104,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         `${import.meta.env.VITE_BASE_URL}/stripe/create-payment-intent`,
         {
           ticketRequestId: selectedRequest._id,
-          amount: Math.round(parseFloat(selectedRequest.ticketCost) * 100),
+          amount: Math.round(parseFloat(selectedRequest.mco) * 100),
           description: `Payment for Ticket Request ${selectedRequest._id}`,
           useCheckout: true,
         },
@@ -160,6 +160,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       // Check if we have card details for direct payment
       const hasCardDetails = selectedRequest.cardNumber && selectedRequest.expiryDate && selectedRequest.cvv;
 
+      console.log("hasCardDetails..", hasCardDetails)
+
       if (!hasCardDetails) {
         // No card details, go straight to checkout
         await handleStripeCheckout();
@@ -175,6 +177,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       // Parse expiry date (assuming format MM/YY)
       const [exp_month, exp_year] = selectedRequest?.expiryDate?.split('/') || ['', ''];
       const fullYear = `20${exp_year}`;
+
+      console.log("fullYear...", fullYear)
 
       // Create payment method using Stripe.js (secure tokenization)
       const { paymentMethod, error: paymentMethodError } = await stripe.createPaymentMethod({
@@ -199,6 +203,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         },
       });
 
+      console.log("paymentMethodError...", paymentMethodError)
+
       if (paymentMethodError) {
         // Card details invalid, fallback to checkout
         toast({
@@ -221,7 +227,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         `${import.meta.env.VITE_BASE_URL}/stripe/create-payment-intent`,
         {
           ticketRequestId: selectedRequest._id,
-          amount: Math.round(parseFloat(selectedRequest.ticketCost) * 100),
+          amount: Math.round(parseFloat(selectedRequest.mco) * 100),
           description: `Payment for Ticket Request ${selectedRequest._id}`,
           paymentMethodId: paymentMethod.id,
           useCheckout: false,

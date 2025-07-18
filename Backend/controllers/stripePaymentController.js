@@ -5,11 +5,18 @@ const { User } = require('../models/User');
 
 // Create Payment Intent for Ticket Request (with Checkout fallback)
 const createStripePaymentIntent = async (req, res) => {
-  console.log("createStripePaymentIntent......", req.body.ticketRequestId, "--and--", req.body.amount);
-
   try {
     const { ticketRequestId, amount, description, paymentMethodId, useCheckout } = req.body;
+    console.log({
+      ticketRequestId,
+      amount,
+      description,
+      paymentMethodId,
+      useCheckout,
+    });
+
     const userId = req.user.id;
+    console.log("userID", userId)
 
     // Validation
     if (!ticketRequestId || !amount) {
@@ -68,8 +75,8 @@ const createStripePaymentIntent = async (req, res) => {
           },
         ],
         mode: 'payment',
-        success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}&ticket_id=${ticketRequestId}`,
-        cancel_url: `${process.env.FRONTEND_URL}/payment-cancel?ticket_id=${ticketRequestId}`,
+        success_url: `https://crm.farebulk.com/dashboard/ticket-request`,
+        cancel_url: `https://crm.farebulk.com/dashboard/overview`,
         metadata: {
           ticketRequestId: ticketRequestId,
           userId: userId.toString(),
@@ -180,7 +187,7 @@ const createStripePaymentIntent = async (req, res) => {
 
   } catch (error) {
     console.error('Error creating Stripe payment intent:', error);
-    
+
     // Handle Stripe-specific errors
     if (error.type === 'StripeCardError') {
       return res.status(400).json({
@@ -230,7 +237,7 @@ const createStripePaymentIntent = async (req, res) => {
 const handleCheckoutSuccess = async (req, res) => {
   try {
     const { session_id } = req.query;
-    
+
     if (!session_id) {
       return res.status(400).json({
         success: false,
