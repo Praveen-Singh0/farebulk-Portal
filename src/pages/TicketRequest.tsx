@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { Search, RefreshCw, Eye, X } from "lucide-react";
 import { format } from "date-fns";
 import axios, { AxiosError } from "axios";
-
 import { useAuth } from '@/contexts/use-auth';
 import { toast } from "../components/ui/use-toast";
+import PaymentForm from "@/components/forms/PaymentForm";
 
 interface TicketRequest {
   _id: string;
@@ -57,8 +57,6 @@ export default function Submission() {
   const [filteredRequests, setFilteredRequests] = useState<TicketRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<TicketRequest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-
   const [currentSlide, setCurrentSlide] = useState(0);
   const [statusData, setStatusData] = useState({
     status: '',
@@ -863,7 +861,7 @@ export default function Submission() {
                               <option value="">Select Payment Method</option>
                               <option value="Stripe UK">Stripe UK</option>
                               <option value="Stripe India">Stripe India</option>
-                              <option value="Authorize US">Authorize US - Airticketspot</option>
+                              <option value="Authorize US">Authorize US - Myfaredeal</option>
                               <option value="Flight Services">Authorize US - Flight Services</option>
                             </select>
                           </div>
@@ -882,13 +880,17 @@ export default function Submission() {
                         </div>
 
                         {/* Submit Button */}
-                        {/* Submit Button */}
                         <div className="flex justify-end pt-4">
-                          {statusData.paymentMethod === 'Authorize US' ? (
+                          {statusData.paymentMethod === 'Authorize US' || statusData.paymentMethod === 'Flight Services' ? (
                             <button
                               onClick={handleAuthUsPayment}
                               disabled={isSubmitting}
-                              className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-all duration-200 shadow-lg hover:shadow-xl"
+                              className={`px-8 py-3 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-all duration-200 shadow-lg hover:shadow-xl ${statusData.paymentMethod === 'Authorize US'
+                                ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+                                : statusData.paymentMethod === 'Flight Services'
+                                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                                  : 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700'
+                                }`}
                             >
                               {isSubmitting ? (
                                 <>
@@ -900,30 +902,17 @@ export default function Submission() {
                                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                   </svg>
-                                  Authorize US - Airticketspot
+                                  Authorize US - {statusData.paymentMethod === "Authorize US" ? "Myfaredeal" : "Flight Services"}
                                 </>
                               )}
                             </button>
-                          ) : statusData.paymentMethod === 'Flight Services' ? (
-                            <button
-                              onClick={handleAuthUsPayment}
-                              disabled={isSubmitting}
-                              className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-all duration-200 shadow-lg hover:shadow-xl"
-                            >
-                              {isSubmitting ? (
-                                <>
-                                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                                  Payment Processing...
-                                </>
-                              ) : (
-                                <>
-                                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                  Authorize US - Flight Services
-                                </>
-                              )}
-                            </button>
+                          ) : statusData.paymentMethod === 'Stripe UK' ? (
+                            <PaymentForm
+                              selectedRequest={selectedRequest}
+                              statusData={statusData}
+                              fetchTicketRequests={fetchTicketRequests}
+                              closeModal={closeModal}
+                            />
                           ) : (
                             <button
                               onClick={handleStatusUpdate}
