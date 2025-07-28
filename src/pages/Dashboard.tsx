@@ -1,22 +1,28 @@
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { Button } from '../components/ui/button';
-import TravelConsultantForm from '../components/forms/TravelConsultantForm';
-import Overview from './Overview';
-import SalesOverview from '../components/SalesOverview';
-import Sidebar from '../components/Sidebar';
-import Consultants from './Consultants';
-import { Menu, X, Clock, User, StickyNote } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/use-auth';
-import TicketRequest from './TicketRequest';
-import Submission from './Submissions';
-import MySale from './mySale';
-import APIBooking from './APIBooking';
-import { Bell } from 'lucide-react';
-import axios from 'axios';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import TodoComponent from './TodoComponent';
+import {
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+import { Button } from "../components/ui/button";
+import TravelConsultantForm from "../components/forms/TravelConsultantForm";
+import Overview from "./Overview";
+import SalesOverview from "../components/SalesOverview";
+import Sidebar from "../components/Sidebar";
+import Consultants from "./Consultants";
+import { Menu, X, Clock, User, StickyNote } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/use-auth";
+import TicketRequest from "./TicketRequest";
+import Submission from "./Submissions";
+import MySale from "./mySale";
+import APIBooking from "./APIBooking";
+import { Bell } from "lucide-react";
+import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import TodoComponent from "./TodoComponent";
 
 interface TicketRequest {
   _id: string;
@@ -49,20 +55,25 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
-  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState<boolean>(false);
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] =
+    useState<boolean>(false);
   const [isTodoOpen, setIsTodoOpen] = useState<boolean>(false);
   const [pendingRequests, setPendingRequests] = useState<TicketRequest[]>([]);
   const [todoCount, setTodoCount] = useState<number>(0);
 
-
   // Check if we're on the dashboard overview page
-  const isDashboardOverview = location.pathname === '/dashboard' || location.pathname === '/dashboard/' || location.pathname === '/dashboard/overview';
+  const isDashboardOverview =
+    location.pathname === "/dashboard" ||
+    location.pathname === "/dashboard/" ||
+    location.pathname === "/dashboard/overview";
 
   // Load todo count from localStorage
   useEffect(() => {
     const loadTodoCount = (): void => {
       try {
-        const storedTodos = localStorage.getItem(`todos_${user?.userName || 'default'}`);
+        const storedTodos = localStorage.getItem(
+          `todos_${user?.userName || "default"}`
+        );
         if (storedTodos) {
           const todos = JSON.parse(storedTodos);
           const incompleteTodos = todos.filter((todo: any) => !todo.completed);
@@ -71,7 +82,7 @@ const Dashboard: React.FC = () => {
           setTodoCount(0);
         }
       } catch (error) {
-        console.error('Failed to load todo count:', error);
+        console.error("Failed to load todo count:", error);
         setTodoCount(0);
       }
     };
@@ -81,31 +92,30 @@ const Dashboard: React.FC = () => {
 
     // Listen for storage changes (for multi-tab sync)
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === `todos_${user?.userName || 'default'}`) {
+      if (e.key === `todos_${user?.userName || "default"}`) {
         loadTodoCount();
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
 
     // Optional: Set up interval to check for changes (in case of multiple tabs)
     const interval = setInterval(loadTodoCount, 2000);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener("storage", handleStorageChange);
       clearInterval(interval);
     };
   }, [user?.userName]);
 
-
   // Play custom notification sound
   const playCustomNotificationSound = (count: number): void => {
-    const audio = new Audio('/sounds/notification.mp3');
+    const audio = new Audio("/sounds/notification.mp3");
 
     const playSound = (): void => {
       audio.currentTime = 0;
-      audio.play().catch(error => {
-        console.log('Audio play failed:', error);
+      audio.play().catch((error) => {
+        console.log("Audio play failed:", error);
       });
     };
 
@@ -119,7 +129,9 @@ const Dashboard: React.FC = () => {
   // Get stored notifications from localStorage
   const getStoredNotifications = (): string[] => {
     try {
-      const stored = localStorage.getItem(`notified_requests_${user?.userName}`);
+      const stored = localStorage.getItem(
+        `notified_requests_${user?.userName}`
+      );
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -129,9 +141,12 @@ const Dashboard: React.FC = () => {
   // Save notified request IDs to localStorage
   const saveNotifiedRequests = (requestIds: string[]): void => {
     try {
-      localStorage.setItem(`notified_requests_${user?.userName}`, JSON.stringify(requestIds));
+      localStorage.setItem(
+        `notified_requests_${user?.userName}`,
+        JSON.stringify(requestIds)
+      );
     } catch (error) {
-      console.error('Failed to save to localStorage:', error);
+      console.error("Failed to save to localStorage:", error);
     }
   };
 
@@ -150,23 +165,22 @@ const Dashboard: React.FC = () => {
             draggable: true,
             onClick: () => {
               setIsNotificationPanelOpen(true);
-            }
+            },
           }
         );
       }, index * 2000);
     });
   };
 
-
   //EST time zone
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleString('en-US', {
-      timeZone: 'America/New_York', // EST or EDT depending on the date
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(dateString).toLocaleString("en-US", {
+      timeZone: "America/New_York", // EST or EDT depending on the date
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: true,
     });
   };
@@ -176,7 +190,7 @@ const Dashboard: React.FC = () => {
       return;
     }
 
-    if (user?.role === 'travel') {
+    if (user?.role === "travel") {
       return;
     }
 
@@ -184,27 +198,32 @@ const Dashboard: React.FC = () => {
 
     const fetchTicketRequests = async (): Promise<void> => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/ticket-requests`, {
-          withCredentials: true
-        });
+        const response = await axios.get(
+          `${import.meta.env.VITE_BASE_URL}/ticket-requests`,
+          {
+            withCredentials: true,
+          }
+        );
 
         if (!isMounted) return;
 
         const userTickets = response.data.filter((ticket: TicketRequest) => {
-          return ticket.status === 'Pending';
+          return ticket.status === "Pending";
         });
 
         // Get previously notified request IDs
         const storedNotifiedIds = getStoredNotifications();
 
         // Find new requests that haven't been notified yet
-        const newRequests = userTickets.filter((ticket: TicketRequest) =>
-          !storedNotifiedIds.includes(ticket._id)
+        const newRequests = userTickets.filter(
+          (ticket: TicketRequest) => !storedNotifiedIds.includes(ticket._id)
         );
 
         if (newRequests.length > 0) {
           // Update localStorage with all current pending request IDs
-          const allCurrentIds = userTickets.map((ticket: TicketRequest) => ticket._id);
+          const allCurrentIds = userTickets.map(
+            (ticket: TicketRequest) => ticket._id
+          );
           saveNotifiedRequests(allCurrentIds);
 
           // Show notifications and play sound for new requests
@@ -212,10 +231,11 @@ const Dashboard: React.FC = () => {
             showToastNotifications(newRequests);
             playCustomNotificationSound(newRequests.length);
           }, 1000);
-
         } else {
           // Still update localStorage to clean up any resolved requests
-          const allCurrentIds = userTickets.map((ticket: TicketRequest) => ticket._id);
+          const allCurrentIds = userTickets.map(
+            (ticket: TicketRequest) => ticket._id
+          );
           saveNotifiedRequests(allCurrentIds);
         }
 
@@ -255,15 +275,12 @@ const Dashboard: React.FC = () => {
 
   const handleViewRequest = (): void => {
     setIsNotificationPanelOpen(false);
-    navigate('/dashboard/ticket-request');
+    navigate("/dashboard/ticket-request");
   };
 
   const handleTodoCountChange = (count: number): void => {
     setTodoCount(count);
   };
-
-
-
 
   return (
     <div className="flex h-screen bg-background">
@@ -276,10 +293,14 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Sidebar */}
-      <div className={`
+      <div
+        className={`
         fixed lg:static inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
+        ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }
+      `}
+      >
         <Sidebar role={user.role} />
       </div>
 
@@ -292,10 +313,12 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Notification Slide Panel */}
-      <div className={`
+      <div
+        className={`
         fixed top-0 right-0 h-full w-96 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50
-        ${isNotificationPanelOpen ? 'translate-x-0' : 'translate-x-full'}
-      `}>
+        ${isNotificationPanelOpen ? "translate-x-0" : "translate-x-full"}
+      `}
+      >
         <div className="flex flex-col h-full">
           {/* Panel Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
@@ -342,8 +365,12 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     <div className="text-sm text-gray-600 flex">
-                      <p className='pr-2'><strong>Request:</strong> {request.requestFor}</p>
-                      <p><strong>For:</strong> {request.ticketType}</p>
+                      <p className="pr-2">
+                        <strong>Request:</strong> {request.requestFor}
+                      </p>
+                      <p>
+                        <strong>For:</strong> {request.ticketType}
+                      </p>
                     </div>
 
                     <div className="flex items-center gap-1 mt-3 text-xs text-gray-500">
@@ -375,7 +402,7 @@ const Dashboard: React.FC = () => {
         isOpen={isTodoOpen}
         onClose={() => setIsTodoOpen(false)}
         onTodoCountChange={handleTodoCountChange}
-        userId={user?.userName || 'default'}
+        userId={user?.userName || "default"}
       />
 
       <div className="flex-1 flex flex-col">
@@ -390,10 +417,12 @@ const Dashboard: React.FC = () => {
               >
                 <Menu className="h-5 w-5" />
               </Button>
-              <h1 className="text-xl font-bold text-foreground">Farebulk Portal</h1>
+              <h1 className="text-xl font-bold text-foreground">
+                Farebulk Portal
+              </h1>
             </div>
 
-            {user.role === 'travel' && (
+            {user.role === "travel" && (
               <div className="flex items-center gap-4">
                 <button
                   onClick={handleTodoClick}
@@ -411,16 +440,15 @@ const Dashboard: React.FC = () => {
 
             <div className="flex items-center gap-4">
               <a
-  href="https://myfaredeal.us/"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-block px-2 py-1 rounded-lg text-white font-semibold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 transition-all duration-300 shadow-lg"
->
-  Auth Form
-</a>
+                href="https://myfaredeal.us/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-2 py-1 rounded-lg text-white font-semibold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 transition-all duration-300 shadow-lg"
+              >
+                Auth Form
+              </a>
 
-
-              {user.role !== 'travel' && (
+              {user.role !== "travel" && (
                 <button
                   onClick={handleNotificationClick}
                   className="relative focus:outline-none hover:bg-gray-100 p-2 rounded-full transition-colors"
@@ -434,7 +462,9 @@ const Dashboard: React.FC = () => {
                 </button>
               )}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{user.userName}</span>
+                <span className="text-sm text-muted-foreground">
+                  {user.userName}
+                </span>
                 <div className="h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-semibold">
                   {user.userName?.charAt(0).toUpperCase()}
                 </div>
@@ -453,31 +483,57 @@ const Dashboard: React.FC = () => {
             <Route path="/" element={<Navigate to="overview" replace />} />
             <Route path="overview" element={<Overview />} />
             <Route path="sales" element={<SalesOverview />} />
-            <Route path="forms" element={
-              <div className="space-y-6">
-                {user.role === 'travel' && (
-                  <div className="bg-card shadow sm:rounded-lg">
-                    <div className="px-4 py-5 sm:p-6">
-                      <h3 className="text-lg font-medium leading-6 text-foreground">Create New Sale</h3>
-                      <div className="mt-2 max-w-xl text-sm text-muted-foreground">
-                        <p>Please carefully fill out this form.</p>
-                      </div>
-                      <div className="mt-5">
-                        <TravelConsultantForm user={user} />
+            <Route
+              path="forms"
+              element={
+                <div className="space-y-6">
+                  {user.role === "travel" && (
+                    <div className="bg-card shadow sm:rounded-lg">
+                      <div className="px-4 py-5 sm:p-6">
+                        <h3 className="text-lg font-medium leading-6 text-foreground">
+                          Create New Sale
+                        </h3>
+                        <div className="mt-2 max-w-xl text-sm text-muted-foreground">
+                          <p>Please carefully fill out this form.</p>
+                        </div>
+                        <div className="mt-5">
+                          <TravelConsultantForm user={user} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            } />
+                  )}
+                </div>
+              }
+            />
             <Route path="reports" element={<div>Comming Soon</div>} />
             <Route path="consultants" element={<Consultants />} />
             <Route path="settings" element={<div>Comming Soon</div>} />
-            <Route path="my-sales" element={<div><MySale /></div>} />
+            <Route
+              path="my-sales"
+              element={
+                <div>
+                  <MySale />
+                </div>
+              }
+            />
             <Route path="ticket-request" element={<TicketRequest />} />
             <Route path="profile" element={<div>Comming Soon</div>} />
-            <Route path="submissions" element={<div><Submission /></div>} />
-            <Route path="APIBooking" element={<div><APIBooking /></div>} />
+            <Route
+              path="submissions"
+              element={
+                <div>
+                  <Submission />
+                </div>
+              }
+            />
+            <Route
+              path="APIBooking"
+              element={
+                <div>
+                  <APIBooking />
+                </div>
+              }
+            />
           </Routes>
         </main>
       </div>
@@ -494,7 +550,7 @@ const Dashboard: React.FC = () => {
         draggable
         pauseOnHover
         theme="light"
-        style={{ marginTop: '60px' }}
+        style={{ marginTop: "60px" }}
       />
     </div>
   );
