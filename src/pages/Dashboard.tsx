@@ -282,6 +282,10 @@ const Dashboard: React.FC = () => {
     setTodoCount(count);
   };
 
+
+  const url = `https://myfaredeal.us/?email=${encodeURIComponent(user?.email)}&name=${encodeURIComponent(user?.userName)}`;
+
+
   return (
     <div className="flex h-screen bg-background">
       {/* Mobile Sidebar Overlay */}
@@ -440,7 +444,7 @@ const Dashboard: React.FC = () => {
 
             <div className="flex items-center gap-4">
               <a
-                href="https://myfaredeal.us/"
+                href={url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block px-2 py-1 rounded-lg text-white font-semibold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 transition-all duration-300 shadow-lg"
