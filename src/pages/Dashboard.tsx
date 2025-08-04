@@ -283,7 +283,8 @@ const Dashboard: React.FC = () => {
   };
 
 
-  const url = `https://myfaredeal.us/?email=${encodeURIComponent(user?.email)}&name=${encodeURIComponent(user?.userName)}`;
+  const url = `https://myfaredeal.us/?email=${encodeURIComponent(user?.email || "")}&name=${encodeURIComponent(user?.userName || "")}`;
+
 
 
   return (
