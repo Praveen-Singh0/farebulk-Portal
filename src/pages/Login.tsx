@@ -17,7 +17,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e0e7ff] via-[#f5f7fa] to-[#c3cfe2] ">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e0e7ff] via-[#f5f7fa] to-[#c3cfe2] " style={{backgroundImage: "url('/assets/img/image_bg.jpg')", backgroundSize: 'cover'}}>
       <div className="w-full max-w-md bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl px-10 py-4 border border-white/40 relative">
        
         {/* Header */}
