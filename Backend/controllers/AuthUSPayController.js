@@ -19,12 +19,6 @@ const authorizeUsPayment = async (req, res) => {
     let apiLoginKey = process.env.AUTHUSLOGINID;
     let transactionKey = process.env.AUTHUSTRANSACTIONKEY;
 
-
-    if (req.body.paymentMethod === 'Flight Services') {
-      apiLoginKey = process.env.FLIGHT_LOGIN_ID;
-      transactionKey = process.env.FLIGHT_TRANSACTION_KEY;
-    }
-
    
     if (!ticketRequestId) {
       return res.status(400).json({ success: false, message: 'ticketRequestId is required' });

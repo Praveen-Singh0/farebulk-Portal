@@ -5,7 +5,7 @@ import { Search, RefreshCw, Eye, X } from "lucide-react";
 import { format } from "date-fns";
 import axios, { AxiosError } from "axios";
 
-import { useAuth } from '@/contexts/use-auth';
+import { useAuth } from "@/contexts/use-auth";
 import { toast } from "../components/ui/use-toast";
 
 interface TicketRequest {
@@ -47,7 +47,6 @@ interface BackendErrorResponse {
   errorDetails?: { code?: string; text?: string }[];
 }
 
-
 export default function Submission() {
   const { user } = useAuth();
   const [ticketRequests, setTicketRequests] = useState<TicketRequest[]>([]);
@@ -55,15 +54,16 @@ export default function Submission() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredRequests, setFilteredRequests] = useState<TicketRequest[]>([]);
-  const [selectedRequest, setSelectedRequest] = useState<TicketRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<TicketRequest | null>(
+    null
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
-
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [statusData, setStatusData] = useState({
-    status: '',
-    paymentMethod: '',
-    remark: ''
+    status: "",
+    paymentMethod: "",
+    remark: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -77,14 +77,17 @@ export default function Submission() {
         return;
       }
 
-      const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/ticket-requests`, {
-        withCredentials: true
-      });
+      const response = await axios.get(
+        `${import.meta.env.VITE_BASE_URL}/ticket-requests`,
+        {
+          withCredentials: true,
+        }
+      );
 
       // Filter tickets based on user email and status
       const userTickets = response.data.filter((ticket: TicketRequest) => {
         // First filter by user access
-        let hasAccess = user.role === 'ticket' || user.role === 'admin';
+        let hasAccess = user.role === "ticket" || user.role === "admin";
 
         if (!hasAccess) {
           hasAccess =
@@ -93,9 +96,8 @@ export default function Submission() {
             ticket.consultant === user.email;
         }
 
-
         // Then filter by status - only show pending requests
-        return hasAccess && ticket.status === 'Pending';
+        return hasAccess && ticket.status === "Pending";
       });
 
       console.log("Filtered tickets for user:", userTickets);
@@ -115,12 +117,21 @@ export default function Submission() {
     if (searchTerm === "") {
       setFilteredRequests(ticketRequests);
     } else {
-      const filtered = ticketRequests.filter((request) =>
-        request.passengerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.passengerEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.confirmationCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.ticketType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.consultant?.toLowerCase().includes(searchTerm.toLowerCase())
+      const filtered = ticketRequests.filter(
+        (request) =>
+          request.passengerName
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          request.passengerEmail
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          request.confirmationCode
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          request.ticketType
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          request.consultant?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredRequests(filtered);
     }
@@ -142,10 +153,6 @@ export default function Submission() {
     }
   };
 
-
-
-
-
   const maskCardNumber = (cardNumber?: string) => {
     if (!cardNumber) return "N/A";
     return cardNumber.replace(/(.{4})/g, "$1 ").trim();
@@ -154,10 +161,12 @@ export default function Submission() {
   // Format currency
   const formatCurrency = (amount: string) => {
     const num = parseFloat(amount);
-    return isNaN(num) ? amount : num.toLocaleString('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    });
+    return isNaN(num)
+      ? amount
+      : num.toLocaleString("en-US", {
+          style: "currency",
+          currency: "USD",
+        });
   };
 
   // Handle view details
@@ -166,22 +175,20 @@ export default function Submission() {
     setIsModalOpen(true);
   };
 
-
   const handleNext = () => {
     setCurrentSlide(1);
   };
-
 
   // Add status update handler
   const handleStatusUpdate = async () => {
     if (!selectedRequest) return;
 
     if (!statusData.status) {
-      alert('Status are required.');
+      alert("Status are required.");
       return;
     }
     if (!statusData.paymentMethod) {
-      alert('Payment Method are required.');
+      alert("Payment Method are required.");
       return;
     }
 
@@ -193,9 +200,8 @@ export default function Submission() {
         status: statusData.status,
         paymentMethod: statusData.paymentMethod,
         remark: statusData.remark,
-        ticketRequest: selectedRequest // Include the full ticket request
+        ticketRequest: selectedRequest, // Include the full ticket request
       };
-
 
       const response = await axios.post(
         `${import.meta.env.VITE_BASE_URL}/ticket-requests-status/`,
@@ -205,7 +211,7 @@ export default function Submission() {
         }
       );
 
-      console.log('Response:', response.data);
+      console.log("Response:", response.data);
 
       if (response.data.success) {
         // Refresh the ticket requests list
@@ -217,14 +223,12 @@ export default function Submission() {
         closeModal();
       }
     } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Error updating status. Please try again.');
+      console.error("Error updating status:", error);
+      alert("Error updating status. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
-
-
 
   const handleAuthUsPayment = async () => {
     if (!selectedRequest) return;
@@ -243,7 +247,6 @@ export default function Submission() {
       const updateData = {
         ticketRequestId: selectedRequest._id,
         paymentMethod: statusData.paymentMethod,
-
       };
 
       const response = await axios.post(
@@ -258,8 +261,11 @@ export default function Submission() {
         // ✅ Show success toast with transaction details
         toast({
           title: "Payment successful!",
-          description: `Transaction ID: ${response.data.transactionId}${response.data.authCode ? ` | Auth Code: ${response.data.authCode}` : ''
-            }`,
+          description: `Transaction ID: ${response.data.transactionId}${
+            response.data.authCode
+              ? ` | Auth Code: ${response.data.authCode}`
+              : ""
+          }`,
           className: "bg-green-500 border border-green-200 text-white",
         });
 
@@ -280,7 +286,6 @@ export default function Submission() {
       console.error("Error payment:", error);
       const err = error as AxiosError;
 
-
       let errorMessage = "Transaction failed.";
       let errorTitle = "Payment error";
 
@@ -293,7 +298,7 @@ export default function Submission() {
           errorMessage = errorData.message;
 
           // Customize title based on error type
-          if (errorData.errorType === 'API_ERROR') {
+          if (errorData.errorType === "API_ERROR") {
             errorTitle = "API Authentication Error";
           } else if (errorData.errorCode) {
             errorTitle = `Payment Declined (Code: ${errorData.errorCode})`;
@@ -304,8 +309,9 @@ export default function Submission() {
           // Add error details if available
           if (errorData.errorDetails && errorData.errorDetails.length > 0) {
             const firstError = errorData.errorDetails[0];
-            errorMessage = `${errorMessage}${firstError.code ? ` (Error Code: ${firstError.code})` : ''
-              }`;
+            errorMessage = `${errorMessage}${
+              firstError.code ? ` (Error Code: ${firstError.code})` : ""
+            }`;
           }
         } else {
           // Fallback error handling
@@ -314,7 +320,8 @@ export default function Submission() {
       } else if (err.request) {
         // Network error
         errorTitle = "Network Error";
-        errorMessage = "Unable to connect to payment server. Please check your internet connection.";
+        errorMessage =
+          "Unable to connect to payment server. Please check your internet connection.";
       } else {
         // Other errors
         errorTitle = "Unexpected Error";
@@ -336,13 +343,11 @@ export default function Submission() {
     setSelectedRequest(null);
     setCurrentSlide(0);
     setStatusData({
-      status: '',
-      paymentMethod: '',
-      remark: ''
+      status: "",
+      paymentMethod: "",
+      remark: "",
     });
   };
-
-
 
   // Error state
   if (error) {
@@ -373,7 +378,9 @@ export default function Submission() {
         <div className="bg-white rounded-lg shadow-md">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <p className="text-gray-500 mb-4">Please log in to view ticket requests</p>
+              <p className="text-gray-500 mb-4">
+                Please log in to view ticket requests
+              </p>
             </div>
           </div>
         </div>
@@ -387,15 +394,15 @@ export default function Submission() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {user.role === 'admin' ? 'All Ticket Requests' : 'My Ticket Requests'}
+            {user.role === "admin"
+              ? "All Ticket Requests"
+              : "My Ticket Requests"}
           </h1>
           <p className="text-gray-600 mt-1">
-            {user.role === 'admin'
+            {user.role === "admin"
               ? `Manage and view all ticket requests (${ticketRequests.length} total)`
-              : `View your ticket requests (${ticketRequests.length} total)`
-            }
+              : `View your ticket requests (${ticketRequests.length} total)`}
           </p>
-
         </div>
         <button
           onClick={fetchTicketRequests}
@@ -411,7 +418,10 @@ export default function Submission() {
         <div className="p-6 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <h2 className="text-xl font-semibold text-gray-900">
-              {user.role === 'admin' || user.role === 'ticket' ? 'All Submissions' : 'My Submissions'} ({filteredRequests.length} showing)
+              {user.role === "admin" || user.role === "ticket"
+                ? "All Submissions"
+                : "My Submissions"}{" "}
+              ({filteredRequests.length} showing)
             </h2>
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -431,15 +441,31 @@ export default function Submission() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left p-3 font-semibold text-gray-700">Consultant</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Passenger</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Ticket Type</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Confirmation</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Cost</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Submitted</th>
-                  <th className="text-left p-3 font-semibold text-gray-700">Status</th>
+                  <th className="text-left p-3 font-semibold text-gray-700">
+                    Consultant
+                  </th>
+                  <th className="text-left p-3 font-semibold text-gray-700">
+                    Passenger
+                  </th>
+                  <th className="text-left p-3 font-semibold text-gray-700">
+                    Ticket Type
+                  </th>
+                  <th className="text-left p-3 font-semibold text-gray-700">
+                    Confirmation
+                  </th>
+                  <th className="text-left p-3 font-semibold text-gray-700">
+                    Cost
+                  </th>
+                  <th className="text-left p-3 font-semibold text-gray-700">
+                    Submitted
+                  </th>
+                  <th className="text-left p-3 font-semibold text-gray-700">
+                    Status
+                  </th>
                   {user.role === "ticket" && (
-                    <th className="text-right p-3 font-semibold text-gray-700">Actions</th>
+                    <th className="text-right p-3 font-semibold text-gray-700">
+                      Actions
+                    </th>
                   )}
                 </tr>
               </thead>
@@ -449,8 +475,9 @@ export default function Submission() {
                     <td colSpan={8}>
                       <div className="flex items-center justify-center h-64">
                         <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
-                        <span className="ml-2 text-gray-600">Loading ticket requests...</span>
-
+                        <span className="ml-2 text-gray-600">
+                          Loading ticket requests...
+                        </span>
                       </div>
                     </td>
                   </tr>
@@ -459,38 +486,59 @@ export default function Submission() {
                     <td colSpan={8} className="text-center p-8 text-gray-500">
                       {searchTerm
                         ? "No ticket requests match your search."
-                        : user.role === 'admin' || user.role === 'ticket'
-                          ? "No ticket requests found."
-                          : "You haven't submitted any ticket requests yet."}
+                        : user.role === "admin" || user.role === "ticket"
+                        ? "No ticket requests found."
+                        : "You haven't submitted any ticket requests yet."}
                     </td>
                   </tr>
                 ) : (
                   filteredRequests.map((request) => (
-                    <tr key={request._id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={request._id}
+                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    >
                       <td className="p-3">
-                        <div className="font-medium text-gray-900">{request.consultant}</div>
-                      </td>
-                      <td className="p-3">
-                        <div className="font-medium text-gray-900">{request.passengerName}</div>
-                        <div className="text-sm text-gray-500">{request.passengerEmail}</div>
-                      </td>
-                      <td className="p-3">
-                        <div className="font-medium text-gray-900"> {request.ticketType || "N/A"}
-                          {request.airlineCode ? ` - ${request.airlineCode}` : ""}
+                        <div className="font-medium text-gray-900">
+                          {request.consultant}
                         </div>
-                        <div className="text-sm text-gray-500">{request.requestFor || "N/A"}</div>
                       </td>
                       <td className="p-3">
-                        <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{request.confirmationCode}</span>
+                        <div className="font-medium text-gray-900">
+                          {request.passengerName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {request.passengerEmail}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="font-medium text-gray-900">
+                          {" "}
+                          {request.ticketType || "N/A"}
+                          {request.airlineCode
+                            ? ` - ${request.airlineCode}`
+                            : ""}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {request.requestFor || "N/A"}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                          {request.confirmationCode}
+                        </span>
                       </td>
                       <td className="p-3">
                         <div className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
                           Ticket Cost : {formatCurrency(request.ticketCost)}
                         </div>
-                        <div className="text-sm text-gray-500 px-2 py-1">MCO : {formatCurrency(request.mco)}</div>
+                        <div className="text-sm text-gray-500 px-2 py-1">
+                          MCO : {formatCurrency(request.mco)}
+                        </div>
                       </td>
                       <td className="p-3">
-                        <div className="text-sm text-gray-700">{request.date}  {request.time}</div>
+                        <div className="text-sm text-gray-700">
+                          {request.date} {request.time}
+                        </div>
                       </td>
                       <td className="p-3">
                         <div className="inline-block bg-yellow-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
@@ -510,21 +558,16 @@ export default function Submission() {
                           </div>
                         </td>
                       )}
-
                     </tr>
                   ))
                 )}
               </tbody>
-
             </table>
           </div>
         </div>
       </div>
 
       {/* Modal - Keep the same modal code from previous response */}
-
-
-
 
       {isModalOpen && selectedRequest && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -533,8 +576,18 @@ export default function Submission() {
             <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    className="w-5 h-5 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900">
@@ -566,27 +619,45 @@ export default function Submission() {
                       <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100">
                         <div className="flex items-center space-x-3 mb-6">
                           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            <svg
+                              className="w-4 h-4 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
                             </svg>
                           </div>
-                          <h4 className="text-lg font-semibold text-gray-900">Passenger Information</h4>
+                          <h4 className="text-lg font-semibold text-gray-900">
+                            Passenger Information
+                          </h4>
                         </div>
                         <div className="space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Name</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-2">
+                              Name
+                            </label>
                             <p className="text-gray-900 font-medium bg-white/60 px-3 py-2 rounded-lg">
                               {selectedRequest.passengerName}
                             </p>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Email</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-2">
+                              Email
+                            </label>
                             <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg break-all">
                               {selectedRequest.passengerEmail}
                             </p>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Phone Number</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-2">
+                              Phone Number
+                            </label>
                             <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                               {selectedRequest.phoneNumber}
                             </p>
@@ -598,34 +669,58 @@ export default function Submission() {
                       <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100">
                         <div className="flex items-center space-x-3 mb-6">
                           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                            <svg
+                              className="w-4 h-4 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+                              />
                             </svg>
                           </div>
-                          <h4 className="text-lg font-semibold text-gray-900">Ticket Information</h4>
+                          <h4 className="text-lg font-semibold text-gray-900">
+                            Ticket Information
+                          </h4>
                         </div>
                         <div className="space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Request For</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-2">
+                              Request For
+                            </label>
                             <div className="bg-white/60 px-3 py-2 rounded-lg">
-                              <p className="text-gray-900">{selectedRequest.ticketType || "N/A"}</p>
-                              <p className="text-gray-900">{selectedRequest.requestFor || "N/A"}</p>
+                              <p className="text-gray-900">
+                                {selectedRequest.ticketType || "N/A"}
+                              </p>
+                              <p className="text-gray-900">
+                                {selectedRequest.requestFor || "N/A"}
+                              </p>
                             </div>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Confirmation Code</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-2">
+                              Confirmation Code
+                            </label>
                             <p className="text-gray-900 font-mono bg-white/80 px-3 py-2 rounded-lg border-2 border-dashed border-green-200">
                               {selectedRequest.confirmationCode}
                             </p>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Description</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-2">
+                              Description
+                            </label>
                             <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                               {selectedRequest.Desc || "N/A"}
                             </p>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Ticket Cost</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-2">
+                              Ticket Cost
+                            </label>
                             <p className="text-2xl font-bold text-green-600 bg-white/60 px-3 py-2 rounded-lg">
                               {formatCurrency(selectedRequest.ticketCost)}
                             </p>
@@ -633,7 +728,9 @@ export default function Submission() {
 
                           {selectedRequest.mco && (
                             <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-2">MCO</label>
+                              <label className="block text-sm font-medium text-gray-600 mb-2">
+                                MCO
+                              </label>
                               <p className="text-xl font-semibold text-purple-600 bg-white/60 px-3 py-2 rounded-lg">
                                 {formatCurrency(selectedRequest.mco)}
                               </p>
@@ -642,27 +739,42 @@ export default function Submission() {
                         </div>
                       </div>
 
-
                       {/* Payment Information */}
                       <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-100">
                         <div className="flex items-center space-x-3 mb-6">
                           <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            <svg
+                              className="w-4 h-4 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                              />
                             </svg>
                           </div>
-                          <h4 className="text-lg font-semibold text-gray-900">Payment Information</h4>
+                          <h4 className="text-lg font-semibold text-gray-900">
+                            Payment Information
+                          </h4>
                         </div>
                         <div className="space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Payment Method</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-2">
+                              Payment Method
+                            </label>
                             <p className="text-gray-900 capitalize bg-white/60 px-3 py-2 rounded-lg">
                               {selectedRequest.paymentMethod || "N/A"}
                             </p>
                           </div>
                           {selectedRequest.cardholderName && (
                             <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-2">Cardholder Name</label>
+                              <label className="block text-sm font-medium text-gray-600 mb-2">
+                                Cardholder Name
+                              </label>
                               <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                                 {selectedRequest.cardholderName}
                               </p>
@@ -670,7 +782,9 @@ export default function Submission() {
                           )}
                           {selectedRequest.cardNumber && (
                             <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-2">Card Number</label>
+                              <label className="block text-sm font-medium text-gray-600 mb-2">
+                                Card Number
+                              </label>
                               <p className="text-gray-900 font-mono bg-white/60 px-3 py-2 rounded-lg">
                                 {maskCardNumber(selectedRequest.cardNumber)}
                               </p>
@@ -678,7 +792,9 @@ export default function Submission() {
                           )}
                           {selectedRequest.expiryDate && (
                             <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-2">Expiry Date</label>
+                              <label className="block text-sm font-medium text-gray-600 mb-2">
+                                Expiry Date
+                              </label>
                               <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                                 {selectedRequest.expiryDate}
                               </p>
@@ -686,7 +802,9 @@ export default function Submission() {
                           )}
                           {selectedRequest.cvv && (
                             <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-2">CVV</label>
+                              <label className="block text-sm font-medium text-gray-600 mb-2">
+                                CVV
+                              </label>
                               <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                                 {selectedRequest.cvv}
                               </p>
@@ -699,16 +817,30 @@ export default function Submission() {
                       <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl p-6 border border-teal-100">
                         <div className="flex items-center space-x-3 mb-6">
                           <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <svg
+                              className="w-4 h-4 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
                             </svg>
                           </div>
-                          <h4 className="text-lg font-semibold text-gray-900">Booking Information</h4>
+                          <h4 className="text-lg font-semibold text-gray-900">
+                            Booking Information
+                          </h4>
                         </div>
                         <div className="space-y-4">
                           {selectedRequest.date && (
                             <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-2">Date</label>
+                              <label className="block text-sm font-medium text-gray-600 mb-2">
+                                Date
+                              </label>
                               <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                                 {selectedRequest.date}
                               </p>
@@ -716,7 +848,9 @@ export default function Submission() {
                           )}
                           {selectedRequest.time && (
                             <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-2">Time</label>
+                              <label className="block text-sm font-medium text-gray-600 mb-2">
+                                Time
+                              </label>
                               <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                                 {selectedRequest.time}
                               </p>
@@ -724,7 +858,9 @@ export default function Submission() {
                           )}
                           {selectedRequest.consultant && (
                             <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-2">Consultant</label>
+                              <label className="block text-sm font-medium text-gray-600 mb-2">
+                                Consultant
+                              </label>
                               <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                                 {selectedRequest.consultant}
                               </p>
@@ -737,29 +873,52 @@ export default function Submission() {
                       <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100">
                         <div className="flex items-center space-x-3 mb-6">
                           <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <svg
+                              className="w-4 h-4 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
                             </svg>
                           </div>
-                          <h4 className="text-lg font-semibold text-gray-900">Billing Details</h4>
+                          <h4 className="text-lg font-semibold text-gray-900">
+                            Billing Details
+                          </h4>
                         </div>
                         <div className="space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Address</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-2">
+                              Address
+                            </label>
                             <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                               {selectedRequest.billingAddress || "N/A"}
                             </p>
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-2">City</label>
+                              <label className="block text-sm font-medium text-gray-600 mb-2">
+                                City
+                              </label>
                               <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                                 {selectedRequest.billingCity || "N/A"}
                               </p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-2">State</label>
+                              <label className="block text-sm font-medium text-gray-600 mb-2">
+                                State
+                              </label>
                               <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                                 {selectedRequest.billingState || "N/A"}
                               </p>
@@ -767,13 +926,17 @@ export default function Submission() {
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-2">Country</label>
+                              <label className="block text-sm font-medium text-gray-600 mb-2">
+                                Country
+                              </label>
                               <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                                 {selectedRequest.billingCountry || "N/A"}
                               </p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-2">Zip Code</label>
+                              <label className="block text-sm font-medium text-gray-600 mb-2">
+                                Zip Code
+                              </label>
                               <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                                 {selectedRequest.billingZipCode || "N/A"}
                               </p>
@@ -786,27 +949,45 @@ export default function Submission() {
                       <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-2xl p-6 border border-gray-200">
                         <div className="flex items-center space-x-3 mb-6">
                           <div className="w-8 h-8 bg-gray-500 rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                            <svg
+                              className="w-4 h-4 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                              />
                             </svg>
                           </div>
-                          <h4 className="text-lg font-semibold text-gray-900">System Information</h4>
+                          <h4 className="text-lg font-semibold text-gray-900">
+                            System Information
+                          </h4>
                         </div>
                         <div className="space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Created At</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-2">
+                              Created At
+                            </label>
                             <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                               {formatDate(selectedRequest.createdAt)}
                             </p>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Updated At</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-2">
+                              Updated At
+                            </label>
                             <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
                               {formatDate(selectedRequest.updatedAt)}
                             </p>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Request ID</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-2">
+                              Request ID
+                            </label>
                             <p className="text-gray-900 font-mono text-xs bg-white/60 px-3 py-2 rounded-lg break-all">
                               {selectedRequest._id}
                             </p>
@@ -827,21 +1008,40 @@ export default function Submission() {
                     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-100">
                       <div className="flex items-center space-x-3 mb-8">
                         <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <svg
+                            className="w-5 h-5 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
                           </svg>
                         </div>
-                        <h4 className="text-2xl font-bold text-gray-900">Update Ticket Status</h4>
+                        <h4 className="text-2xl font-bold text-gray-900">
+                          Update Ticket Status
+                        </h4>
                       </div>
 
                       <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {/* Status Selection */}
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">Status *</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-3">
+                              Status *
+                            </label>
                             <select
                               value={statusData.status}
-                              onChange={(e) => setStatusData(prev => ({ ...prev, status: e.target.value }))}
+                              onChange={(e) =>
+                                setStatusData((prev) => ({
+                                  ...prev,
+                                  status: e.target.value,
+                                }))
+                              }
                               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white/80"
                             >
                               <option value="">Select Status</option>
@@ -852,29 +1052,42 @@ export default function Submission() {
 
                           {/* Payment Method Selection */}
                           <div className="pb-6 z-50">
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">Payment Method *</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-3">
+                              Payment Method *
+                            </label>
                             <select
                               value={statusData.paymentMethod}
                               onChange={(e) =>
-                                setStatusData((prev) => ({ ...prev, paymentMethod: e.target.value }))
+                                setStatusData((prev) => ({
+                                  ...prev,
+                                  paymentMethod: e.target.value,
+                                }))
                               }
                               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white/80"
                             >
                               <option value="">Select Payment Method</option>
                               <option value="Stripe UK">Stripe UK</option>
                               <option value="Stripe India">Stripe India</option>
-                              <option value="Authorize US">Authorize US - Airticketspot</option>
-                              <option value="Flight Services">Authorize US - Flight Services</option>
+                              <option value="Authorize US">
+                                Authorize US - Airticketspot
+                              </option>
                             </select>
                           </div>
                         </div>
 
                         {/* Remark Field */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-3">Remark</label>
+                          <label className="block text-sm font-semibold text-gray-700 mb-3">
+                            Remark
+                          </label>
                           <textarea
                             value={statusData.remark}
-                            onChange={(e) => setStatusData(prev => ({ ...prev, remark: e.target.value }))}
+                            onChange={(e) =>
+                              setStatusData((prev) => ({
+                                ...prev,
+                                remark: e.target.value,
+                              }))
+                            }
                             rows={5}
                             className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white/80 resize-none"
                             placeholder="Enter your remarks here..."
@@ -882,9 +1095,8 @@ export default function Submission() {
                         </div>
 
                         {/* Submit Button */}
-                        {/* Submit Button */}
                         <div className="flex justify-end pt-4">
-                          {statusData.paymentMethod === 'Authorize US' ? (
+                          {statusData.paymentMethod === "Authorize US" ? (
                             <button
                               onClick={handleAuthUsPayment}
                               disabled={isSubmitting}
@@ -897,30 +1109,20 @@ export default function Submission() {
                                 </>
                               ) : (
                                 <>
-                                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  <svg
+                                    className="w-5 h-5 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
                                   </svg>
                                   Authorize US - Airticketspot
-                                </>
-                              )}
-                            </button>
-                          ) : statusData.paymentMethod === 'Flight Services' ? (
-                            <button
-                              onClick={handleAuthUsPayment}
-                              disabled={isSubmitting}
-                              className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-all duration-200 shadow-lg hover:shadow-xl"
-                            >
-                              {isSubmitting ? (
-                                <>
-                                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                                  Payment Processing...
-                                </>
-                              ) : (
-                                <>
-                                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                  Authorize US - Flight Services
                                 </>
                               )}
                             </button>
@@ -937,8 +1139,18 @@ export default function Submission() {
                                 </>
                               ) : (
                                 <>
-                                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  <svg
+                                    className="w-5 h-5 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M5 13l4 4L19 7"
+                                    />
                                   </svg>
                                   Submit
                                 </>
@@ -946,7 +1158,6 @@ export default function Submission() {
                             </button>
                           )}
                         </div>
-
                       </div>
                     </div>
                   </div>
@@ -965,8 +1176,18 @@ export default function Submission() {
                     onClick={() => setCurrentSlide(0)}
                     className="px-6 py-2 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 flex items-center space-x-2"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
                     </svg>
                     <span>Back</span>
                   </button>
@@ -977,8 +1198,18 @@ export default function Submission() {
                     className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl"
                   >
                     <span>Next</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </button>
                 )}
@@ -987,9 +1218,6 @@ export default function Submission() {
           </div>
         </div>
       )}
-
-
-
-    </div >
+    </div>
   );
 }

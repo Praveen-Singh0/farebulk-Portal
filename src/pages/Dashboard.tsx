@@ -282,10 +282,9 @@ const Dashboard: React.FC = () => {
     setTodoCount(count);
   };
 
-
-  const url = `https://myfaredeal.us/?email=${encodeURIComponent(user?.email || "")}&name=${encodeURIComponent(user?.userName || "")}`;
-
-
+  const url = `https://myfaredeal.us/?email=${encodeURIComponent(
+    user?.email || ""
+  )}&name=${encodeURIComponent(user?.userName || "")}`;
 
   return (
     <div className="flex h-screen bg-background">
@@ -422,9 +421,20 @@ const Dashboard: React.FC = () => {
               >
                 <Menu className="h-5 w-5" />
               </Button>
-              <h1 className="text-xl font-bold text-foreground">
-                Farebulk Portal
-              </h1>
+              <div className="flex items-center space-x-4">
+                <img
+                  src="/assets/img/farebulk_icon.svg"
+                  alt="Farebulk Logo"
+                  className="w-[2rem] h-20 object-contain"
+                />
+
+                <h1
+                  className="text-xl font-bold text-foreground"
+                  style={{ margin: "0px" }}
+                >
+                  Farebulk Portal
+                </h1>
+              </div>
             </div>
 
             {user.role === "travel" && (

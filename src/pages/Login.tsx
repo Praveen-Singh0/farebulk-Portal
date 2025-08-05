@@ -3,91 +3,93 @@ import { useAuth } from '@/contexts/use-auth';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 
 const Login = () => {
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await login(email, password);
   };
 
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#fafbfc] px-2">
-      {/* Logo and Portal Name */}
-      <div className="flex flex-col items-center mb-8">
-        <div className="bg-[#9B87F5] rounded-xl h-12 flex items-center justify-center mb-4" style={{ width: '50px' }}>
-          <span className="text-2xl font-bold text-white">F</span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e0e7ff] via-[#f5f7fa] to-[#c3cfe2] ">
+      <div className="w-full max-w-md bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl px-10 py-4 border border-white/40 relative">
+       
+        {/* Header */}
+        <div className="flex flex-col items-center">
+            <img src="/assets/img/farebulk_logo_crm.png" alt="Farebulk Logo" className="w-[10rem] mb-6   h-20 object-contain" />
+
+          <h1 className="text-3xl font-extrabold text-gray-800 tracking-tight">Sign in</h1>
+          <p className="text-gray-500 text-sm mt-2">Welcome back to <span className="font-semibold text-purple-600">Farebulk</span></p>
         </div>
-        {/* <img src="/assets/img/Logo.png" alt="Logo" className="w-22 h-12" /> */}
-
-        <span className="text-2xl font-semibold text-[#22223b]">Farebulk Portal</span>
-      </div>
-
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <h1 className="text-3xl font-extrabold text-center text-[#22223b] mb-2">Sign in to your account</h1>
-        <p className="text-center text-base text-[#6c6f7b] mb-8">Enter your credentials</p>
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <Label htmlFor="email" className="text-base font-semibold text-[#22223b]">Username</Label>
+            <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your username"
+              placeholder="you@example.com"
               required
-              className="mt-2 text-base px-4 py-3 border border-[#e0e0e0] rounded-lg focus:border-[#9B87F5] focus:ring-2 focus:ring-[#9B87F5]/30"
+              className="mt-2 px-4 py-3 border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-500 bg-white/80 transition"
             />
           </div>
           <div>
-            <Label htmlFor="password" className="text-base font-semibold text-[#22223b]">Password</Label>
+            <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
             <div className="relative mt-2">
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder="••••••••"
                 required
-                className="text-base px-4 py-3 border border-[#e0e0e0] rounded-lg focus:border-[#9B87F5] focus:ring-2 focus:ring-[#9B87F5]/30 pr-10"
+                className="px-4 py-3 pr-10 border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-500 bg-white/80 transition"
               />
               <button
                 type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6c6f7b] hover:text-[#9B87F5]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-purple-500 transition"
                 onClick={() => setShowPassword((v) => !v)}
                 tabIndex={-1}
+                aria-label="Toggle password visibility"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-            <div className="flex justify-end mt-2">
-              <a href="#" className="text-sm text-[#9B87F5] hover:underline font-medium">Forgot your password?</a>
+            <div className="text-right mt-2">
+              <a href="#" className="text-sm text-purple-600 hover:underline transition">Forgot password?</a>
             </div>
           </div>
           <Button
             type="submit"
-            className="w-full bg-[#9B87F5] hover:bg-[#7a6ad6] text-lg font-semibold py-3 rounded-lg mt-2"
+            className="w-full bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-700 hover:to-indigo-600 text-white text-base font-semibold py-3 rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
           >
-            {"Sign in"}
+            <LogIn size={20} className="inline-block" />
+            Sign in
           </Button>
         </form>
-        <div className="mt-8 hidden text-center text-sm text-[#6c6f7b]">
-          <div className="mb-1">Demo accounts:</div>
-          <div>Admin: <span className="font-mono">admin@farebulk.com</span> / <span className="font-mono">admin123</span></div>
-          <div>Travel Consultant: <span className="font-mono">travel@farebulk.com</span> / <span className="font-mono">travel123</span></div>
-          <div>Ticket Consultant: <span className="font-mono">ticket@farebulk.com</span> / <span className="font-mono">ticket123</span></div>
+        {/* Divider */}
+        <div className="flex items-center my-8">
+          <div className="flex-grow h-px bg-gray-200" />
+          <span className="mx-4 text-gray-400 text-xs"></span>
+          <div className="flex-grow h-px bg-gray-200" />
+        </div>
+        {/* Social login placeholder */}
+        
+        {/* Footer */}
+        <div className="mt-10 text-center text-xs text-gray-400">
+          <span>Don&apos;t have an account? <a href="#" className="text-purple-600 hover:underline">Sign up</a></span>
         </div>
       </div>
     </div>
   );
 };
 
-export default Login; 
+export default Login;
