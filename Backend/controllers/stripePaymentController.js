@@ -48,7 +48,7 @@ const createStripePaymentIntent = async (req, res) => {
         // Create payment intent and confirm immediately
         const paymentIntent = await stripe.paymentIntents.create({
             amount: Math.round(amount),
-            currency: 'usd',
+            currency: 'cad',
             payment_method: paymentMethodId,
             confirmation_method: 'automatic',
             confirm: true,

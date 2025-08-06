@@ -106,7 +106,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         `${import.meta.env.VITE_BASE_URL}/stripe/create-payment-intent`,
         {
           ticketRequestId: selectedRequest._id,
-          amount: Math.round(parseFloat(selectedRequest.mco)),
+          amount: Math.round(parseFloat(selectedRequest.mco) * 100), // Convert to cents
           paymentMethodId: paymentMethod.id,
           description: `Payment for Ticket Request ${selectedRequest._id}`,
         },
