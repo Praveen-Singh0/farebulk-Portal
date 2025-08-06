@@ -52,7 +52,7 @@ const createStripePaymentIntent = async (req, res) => {
             payment_method: paymentMethodId,
             confirmation_method: 'automatic',
             confirm: true,
-            return_url: 'https://your-domain.com/payment-return', // Add this line
+            return_url: 'https://your-domain.com/payment-return',
             description: description || `Payment for Ticket Request ${ticketRequestId}`,
             metadata: {
                 ticketRequestId: ticketRequestId, 
@@ -63,9 +63,9 @@ const createStripePaymentIntent = async (req, res) => {
 
         console.log('Payment intent created:', paymentIntent.id, 'Status:', paymentIntent.status);
 
-        // Handle different payment statuses
+        // Handle payment status
         if (paymentIntent.status === 'succeeded') {
-            console.log('Payment succeeded immediately');
+            console.log('Payment succeeded');
             await updateTicketStatus(ticketRequest, 'Charge', user, paymentIntent.id);
 
             return res.status(200).json({
@@ -73,17 +73,6 @@ const createStripePaymentIntent = async (req, res) => {
                 paymentIntentId: paymentIntent.id,
                 status: 'succeeded',
                 message: 'Payment completed successfully'
-            });
-        }
-        else if (paymentIntent.status === 'requires_action') {
-            console.log('Payment requires 3D Secure authentication');
-
-            return res.status(200).json({
-                success: true,
-                requires_action: true,
-                client_secret: paymentIntent.client_secret,
-                paymentIntentId: paymentIntent.id,
-                message: '3D Secure authentication required'
             });
         }
         else {
