@@ -5,21 +5,23 @@ const ticketRequestStatusSchema = new mongoose.Schema({
     type: Object,
     required: true
   },
-  status: { 
-    type: String, 
+  status: {
+    type: String,
     required: true,
     enum: ['Pending', 'Charge', 'Not Charge']
   },
-  paymentMethod: { 
+  paymentMethod: {
     type: String,
   },
-  remark: { 
-    type: String 
+  remark: {
+    type: String
   },
   updatedBy: {
-    type: String,
+    type: String, 
     required: true
-  }
+  },
+  paymentIntentId: { type: String },
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('TicketRequestStatus', ticketRequestStatusSchema);

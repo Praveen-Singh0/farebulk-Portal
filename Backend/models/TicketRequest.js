@@ -5,6 +5,7 @@ const ticketRequestSchema = new mongoose.Schema({
   passengerName: { type: String, required: true },
   passengerEmail: { type: String, required: true },
   phoneNumber: { type: String, required: true },
+  
 
   // Flight / ticket details
   airlineCode: { type: String }, // corrected spelling from airlinesCode to airlineCode
@@ -14,6 +15,7 @@ const ticketRequestSchema = new mongoose.Schema({
   ticketType: { type: String, required: true },
   requestFor: { type: String, required: true },
   Desc: { type: String, required: true },
+  paymentIntentId: { type: String },
 
   // Consultant
   consultant: { type: String },
@@ -41,7 +43,7 @@ const ticketRequestSchema = new mongoose.Schema({
   billingAddress: { type: String },
   billingCity: { type: String },
   billingState: { type: String },
-  billingCountry: { type: String },
+  billingCountry: { type: String }, 
   billingZipCode: { type: String },
 }, { timestamps: true });
 

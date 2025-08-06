@@ -1,5 +1,5 @@
 const mongoose = require("mongoose")
-const {Schema} = mongoose;
+const { Schema } = mongoose;
 const bcrypt = require("bcrypt")
 
 const userSchema = new Schema(
@@ -13,7 +13,7 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: [true, 'Password is required'],  
       trim: true
     },
     role: {
@@ -22,6 +22,10 @@ const userSchema = new Schema(
     },
     userName: {
       type: String,
+    },
+    stripeCustomerId: {
+      type: String,
+      default: null
     },
   },
   {
