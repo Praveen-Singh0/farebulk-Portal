@@ -47,12 +47,12 @@ const createStripePaymentIntent = async (req, res) => {
 
         // Create payment intent and confirm immediately
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(amount),
+            amount: Math.round(amount), 
             currency: 'cad',
             payment_method: paymentMethodId,
             confirmation_method: 'automatic',
             confirm: true,
-            return_url: 'https://your-domain.com/payment-return',
+            return_url: 'https://your-domain.com/payment-return', // Add this line
             description: description || `Payment for Ticket Request ${ticketRequestId}`,
             metadata: {
                 ticketRequestId: ticketRequestId, 
@@ -63,9 +63,9 @@ const createStripePaymentIntent = async (req, res) => {
 
         console.log('Payment intent created:', paymentIntent.id, 'Status:', paymentIntent.status);
 
-        // Handle payment status
+        // Handle different payment statuses
         if (paymentIntent.status === 'succeeded') {
-            console.log('Payment succeeded');
+            console.log('Payment succeeded immediately');
             await updateTicketStatus(ticketRequest, 'Charge', user, paymentIntent.id);
 
             return res.status(200).json({
@@ -73,6 +73,17 @@ const createStripePaymentIntent = async (req, res) => {
                 paymentIntentId: paymentIntent.id,
                 status: 'succeeded',
                 message: 'Payment completed successfully'
+            });
+        }
+        else if (paymentIntent.status === 'requires_action') {
+            console.log('Payment requires 3D Secure authentication');
+
+            return res.status(200).json({
+                success: true,
+                requires_action: true,
+                client_secret: paymentIntent.client_secret,
+                paymentIntentId: paymentIntent.id,
+                message: '3D Secure authentication required'
             });
         }
         else {
@@ -87,19 +98,6 @@ const createStripePaymentIntent = async (req, res) => {
 
     } catch (error) {
         console.error('Payment processing error:', error);
-
-        // If we have ticketRequest, update status to failed
-        if (req.body.ticketRequestId) {
-            try {
-                const ticketRequest = await TicketRequest.findById(req.body.ticketRequestId);
-                const user = await User.findById(req.user.id);
-                if (ticketRequest && user) {
-                    await updateTicketStatus(ticketRequest, 'Not Charge', user, null);
-                }
-            } catch (updateError) {
-                console.error('Error updating failed payment status:', updateError);
-            }
-        }
 
         // Handle Stripe-specific errors
         let message = 'Payment processing failed';
