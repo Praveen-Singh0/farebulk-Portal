@@ -108,7 +108,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           ticketRequestId: selectedRequest._id,
           amount: Math.round(parseFloat(selectedRequest.mco) * 100), // Convert to cents
           paymentMethodId: paymentMethod.id,
-          description: `Payment for Ticket Request ${selectedRequest._id}`,
+          description: selectedRequest.Desc,
         },
         { withCredentials: true }
       );
@@ -165,7 +165,10 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
             Expiry: {selectedRequest.expiryDate || "Not provided"}
           </p>
           <p className="text-sm text-gray-600">
-            css: {selectedRequest.cvv || "Not provided"}
+            cvv: {selectedRequest.cvv || "Not provided"}
+          </p>
+           <p className="text-sm text-gray-600">
+            ZIP: {selectedRequest.billingZipCode || "Not provided"}
           </p>
         </div>
       )}

@@ -7,6 +7,10 @@ const createStripePaymentIntent = async (req, res) => {
     try {
         const { ticketRequestId, amount, paymentMethodId, description } = req.body;
 
+        console.log('description:', description);
+
+        
+
         console.log('Payment request received:', { ticketRequestId, amount, paymentMethodId });
 
         // Validate inputs
@@ -48,7 +52,7 @@ const createStripePaymentIntent = async (req, res) => {
         // Create payment intent and confirm immediately
         const paymentIntent = await stripe.paymentIntents.create({
             amount: Math.round(amount), 
-            currency: 'cad',
+            currency: 'usd',
             payment_method: paymentMethodId,
             confirmation_method: 'automatic',
             confirm: true,

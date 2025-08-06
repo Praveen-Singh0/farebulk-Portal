@@ -1070,10 +1070,10 @@ export default function Submission() {
                               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white/80"
                             >
                               <option value="">Select Payment Method</option>
-                              <option value="Stripe UK">Stripe UK</option>
+                              <option value="Manually">Manually</option>
                               <option value="Stripe India">Stripe India</option>
                               <option value="Authorize US">
-                                Authorize US - Airticketspot
+                                Authorize US - Myfaredeal
                               </option>
                             </select>
                           </div>
@@ -1125,7 +1125,7 @@ export default function Submission() {
                                   </>
                                 )}
                               </button>
-                            ) : statusData.paymentMethod === 'Stripe UK' ? (
+                            ) : statusData.paymentMethod === 'Stripe India' ? (
                               <Elements stripe={stripePromise}>
                                 <PaymentForm
                                   selectedRequest={selectedRequest}
