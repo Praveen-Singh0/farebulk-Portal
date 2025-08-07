@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { Search, FileText, FileSpreadsheet } from "lucide-react";
 
 type SaleData = {
@@ -23,12 +23,12 @@ type Props = {
 };
 
 const SalesList = ({ saleData = [] }: Props) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
-  console.log("sale data", saleData)
+  console.log("sale data", saleData);
 
   const filteredData = saleData
-    .filter((sale) => sale.status === 'Charge')
+    .filter((sale) => sale.status === "Charge")
     .filter((sale) =>
       Object.values(sale).some((val) =>
         String(val).toLowerCase().includes(searchTerm.toLowerCase())
@@ -38,16 +38,16 @@ const SalesList = ({ saleData = [] }: Props) => {
   const formatDate = (dateString: string): string => {
     try {
       const options: Intl.DateTimeFormatOptions = {
-        timeZone: 'America/New_York',
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
         hour12: true,
       };
 
-      const formatter = new Intl.DateTimeFormat('en-US', options);
+      const formatter = new Intl.DateTimeFormat("en-US", options);
       return formatter.format(new Date(dateString));
     } catch {
       return dateString;
@@ -56,51 +56,56 @@ const SalesList = ({ saleData = [] }: Props) => {
 
   const downloadExcel = () => {
     const headers = [
-      'Consultant',
-      'Passenger Name',
-      'Passenger Email',
-      'Ticket Type',
-      'Request For',
-      'Confirmation Code',
-      'Ticket Cost (USD)',
-      'MCO (USD)',
-      'Sale Amount',
-      'Status',
-      'Payment Method',
-      'Updated By',
-      'Updated At'
+      "Consultant",
+      "Passenger Name",
+      "Passenger Email",
+      "Ticket Type",
+      "Request For",
+      "Confirmation Code",
+      "Ticket Cost (USD)",
+      "MCO (USD)",
+      "Sale Amount",
+      "Status",
+      "Payment Method",
+      "Updated By",
+      "Updated At",
     ];
 
     const csvContent = [
-      headers.join(','),
-      ...filteredData.map(sale => [
-        `"${sale.consultant}"`,
-        `"${sale.passengerName}"`,
-        `"${sale.passengerEmail}"`,
-        `"${sale.ticketType}"`,
-        `"${sale.requestFor}"`,
-        `"${sale.confirmationCode}"`,
-        sale.ticketCostUSD,
-        sale.mcoUSD,
-        sale.saleAmount,
-        `"${sale.status}"`,
-        `"${sale.paymentMethod}"`,
-        `"${sale.updatedBy}"`,
-        `"${formatDate(sale.updatedAt)}"`
-      ].join(','))
-    ].join('\n');
+      headers.join(","),
+      ...filteredData.map((sale) =>
+        [
+          `"${sale.consultant}"`,
+          `"${sale.passengerName}"`,
+          `"${sale.passengerEmail}"`,
+          `"${sale.ticketType}"`,
+          `"${sale.requestFor}"`,
+          `"${sale.confirmationCode}"`,
+          sale.ticketCostUSD,
+          sale.mcoUSD,
+          sale.saleAmount,
+          `"${sale.status}"`,
+          `"${sale.paymentMethod}"`,
+          `"${sale.updatedBy}"`,
+          `"${formatDate(sale.updatedAt)}"`,
+        ].join(",")
+      ),
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `sales-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `sales-report-${new Date().toISOString().split("T")[0]}.csv`
+    );
     link.click();
     URL.revokeObjectURL(url);
   };
 
   const downloadPDF = () => {
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
     const htmlContent = `
@@ -162,7 +167,9 @@ const SalesList = ({ saleData = [] }: Props) => {
       <body>
         <h1>Sales Report</h1>
         <div class="report-info">
-          <p>Generated on: ${new Date().toLocaleDateString()} | Total Records: ${filteredData.length}</p>
+          <p>Generated on: ${new Date().toLocaleDateString()} | Total Records: ${
+      filteredData.length
+    }</p>
         </div>
         <table>
           <thead>
@@ -182,12 +189,16 @@ const SalesList = ({ saleData = [] }: Props) => {
             </tr>
           </thead>
           <tbody>
-            ${filteredData.map(sale => `
+            ${filteredData
+              .map(
+                (sale) => `
               <tr>
                 <td>${sale.consultant}</td>
                 <td>${sale.passengerName}</td>
                 <td>${sale.passengerEmail}</td>
-                <td>${sale.ticketType} ${sale.airlineCode ? sale.airlineCode : ''}</td>
+                <td>${sale.ticketType} ${
+                  sale.airlineCode ? sale.airlineCode : ""
+                }</td>
                 <td>${sale.requestFor}</td>
                 <td>${sale.confirmationCode}</td>
                 <td>$${sale.mcoUSD.toFixed(2)}</td>
@@ -197,7 +208,9 @@ const SalesList = ({ saleData = [] }: Props) => {
                 <td>${sale.updatedBy}</td>
                 <td>${formatDate(sale.updatedAt)}</td>
               </tr>
-            `).join('')}
+            `
+              )
+              .join("")}
           </tbody>
         </table>
       </body>
@@ -213,9 +226,8 @@ const SalesList = ({ saleData = [] }: Props) => {
     }, 250);
   };
 
-
   const finalFilteredData = saleData
-    .filter((sale) => sale.status === 'Charge')
+    .filter((sale) => sale.status === "Charge")
     .filter((sale) =>
       Object.values(sale).some((val) =>
         String(val).toLowerCase().includes(searchTerm.toLowerCase())
@@ -267,15 +279,29 @@ const SalesList = ({ saleData = [] }: Props) => {
         <table className="w-full text-sm text-left">
           <thead className="border-b bg-gray-50">
             <tr>
-              <th className="px-4 py-3 font-semibold text-gray-900">Consultant</th>
-              <th className="px-4 py-3 font-semibold text-gray-900">Passenger</th>
-              <th className="px-4 py-3 font-semibold text-gray-900">Ticket Type</th>
-              <th className="px-4 py-3 font-semibold text-gray-900">Confirmation</th>
-              <th className="px-4 py-3 font-semibold text-gray-900">Sale / MCO</th>
+              <th className="px-4 py-3 font-semibold text-gray-900">
+                Consultant
+              </th>
+              <th className="px-4 py-3 font-semibold text-gray-900">
+                Passenger
+              </th>
+              <th className="px-4 py-3 font-semibold text-gray-900">
+                Ticket Type
+              </th>
+              <th className="px-4 py-3 font-semibold text-gray-900">
+                Confirmation
+              </th>
+              <th className="px-4 py-3 font-semibold text-gray-900">
+                Sale / MCO
+              </th>
               <th className="px-4 py-3 font-semibold text-gray-900">Status</th>
               <th className="px-4 py-3 font-semibold text-gray-900">Payment</th>
-              <th className="px-4 py-3 font-semibold text-gray-900">Updated By</th>
-              <th className="px-4 py-3 font-semibold text-gray-900">Updated At</th>
+              <th className="px-4 py-3 font-semibold text-gray-900">
+                Updated By
+              </th>
+              <th className="px-4 py-3 font-semibold text-gray-900">
+                Updated At
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -284,35 +310,47 @@ const SalesList = ({ saleData = [] }: Props) => {
                 <td className="px-4 py-3">{sale.consultant}</td>
                 <td className="px-4 py-3">
                   <div className="font-medium">{sale.passengerName}</div>
-                  <div className="text-gray-500 text-xs">{sale.passengerEmail}</div>
+                  <div className="text-gray-500 text-xs">
+                    {sale.passengerEmail}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
-
-                  <div className="font-medium text-gray-900"> {sale.ticketType || "N/A"}
+                  <div className="font-medium text-gray-900">
+                    {" "}
+                    {sale.ticketType || "N/A"}
                     {sale.airlineCode ? ` - ${sale.airlineCode}` : ""}
                   </div>
                   <div className="text-xs text-gray-500">{sale.requestFor}</div>
                 </td>
-                <td className="px-4 py-3 font-mono text-sm">{sale.confirmationCode}</td>
+                <td className="px-4 py-3 font-mono text-sm">
+                  {sale.confirmationCode}
+                </td>
                 <td className="px-4 py-3">
-                  <div className="text-xs text-gray-500">MCO: ${sale.mcoUSD.toFixed(2)}</div>
-                  <div className="font-semibold text-green-600">Sale: ${sale.saleAmount.toFixed(2)}</div>
+                  <div className="text-xs text-gray-500">
+                    MCO: ${sale.mcoUSD.toFixed(2)}
+                  </div>
+                  <div className="font-semibold text-green-600">
+                    Sale: ${sale.saleAmount.toFixed(2)}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${sale.status === 'Charge'
-                      ? 'bg-green-100 text-green-800'
-                      : sale.status === 'Pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-blue-100 text-blue-800'
-                      }`}
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      sale.status === "Charge"
+                        ? "bg-green-100 text-green-800"
+                        : sale.status === "Pending"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-blue-100 text-blue-800"
+                    }`}
                   >
                     {sale.status}
                   </span>
                 </td>
                 <td className="px-4 py-3">{sale.paymentMethod}</td>
                 <td className="px-4 py-3">{sale.updatedBy}</td>
-                <td className="px-4 py-3 text-sm">{formatDate(sale.updatedAt)}</td>
+                <td className="px-4 py-3 text-sm">
+                  {formatDate(sale.updatedAt)}
+                </td>
               </tr>
             ))}
             {finalFilteredData.length === 0 && (
@@ -328,8 +366,18 @@ const SalesList = ({ saleData = [] }: Props) => {
 
       <div className="px-4 py-3 border-t bg-gray-50">
         <div className="flex justify-between items-center text-sm text-gray-600">
-          <span>Final MCO: ${finalFilteredData.reduce((sum, sale) => sum + sale.saleAmount, 0).toFixed(2)}</span>
-          <span>Total MCO: ${finalFilteredData.reduce((sum, sale) => sum + sale.mcoUSD, 0).toFixed(2)}</span>
+          <span>
+            Final MCO: $
+            {finalFilteredData
+              .reduce((sum, sale) => sum + sale.saleAmount, 0)
+              .toFixed(2)}
+          </span>
+          <span>
+            Total MCO: $
+            {finalFilteredData
+              .reduce((sum, sale) => sum + sale.mcoUSD, 0)
+              .toFixed(2)}
+          </span>
         </div>
       </div>
     </div>
