@@ -28,6 +28,11 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 };
+
+app.get('/', (req, res) => { 
+  res.send('API is running 🚀');
+});
+
    
 app.use(cors(corsOptions));
 app.use(express.json());

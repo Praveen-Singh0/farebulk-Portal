@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Tooltip, Cell, Legend, ResponsiveContainer } from 'recharts';
 import SalesList from './SalesList';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
 
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
@@ -41,7 +43,7 @@ type SaleData = {
   saleAmount: number;
   status: string;
   paymentMethod: string;
-  updatedBy: string;
+  updatedBy: string; 
   updatedAt: string;
 };
 
@@ -51,6 +53,8 @@ type ConsultantSale = {
 };
 
 const SalesOverview = () => {
+  dayjs.extend(utc);
+
   const [salesData, setSalesData] = useState<SaleData[]>([]);
   const [consultantSales, setConsultantSales] = useState<ConsultantSale[]>([]);
   const [totalSales, setTotalSales] = useState<number>(0);
@@ -66,10 +70,12 @@ const fetchSalesData = async (year: number, month: number) => {
       { withCredentials: true }
     );
 
+
     const filteredData = response.data.data.filter((item) => {
-      const itemDate = dayjs(item.createdAt);
-      return itemDate.year() === year && itemDate.month() === month;
-    });
+  const itemDate = dayjs(item.createdAt).utc().local(); // Convert from UTC to local time
+  return itemDate.year() === year && itemDate.month() === month;
+});
+
 
     const processed: SaleData[] = filteredData.map((item) => {
       const mco = parseFloat(item.ticketRequest.mco);
