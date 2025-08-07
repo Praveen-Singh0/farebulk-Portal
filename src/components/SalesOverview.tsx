@@ -5,7 +5,7 @@ import { PieChart, Pie, Tooltip, Cell, Legend, ResponsiveContainer } from 'recha
 import SalesList from './SalesList';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
-
+import timezone from 'dayjs/plugin/timezone';
 
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
@@ -54,6 +54,8 @@ type ConsultantSale = {
 
 const SalesOverview = () => {
   dayjs.extend(utc);
+  dayjs.extend(timezone);
+
 
   const [salesData, setSalesData] = useState<SaleData[]>([]);
   const [consultantSales, setConsultantSales] = useState<ConsultantSale[]>([]);
