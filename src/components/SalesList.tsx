@@ -47,8 +47,9 @@ const SalesList = ({ saleData = [] }: Props) => {
         hour12: true,
       };
 
-      const formatter = new Intl.DateTimeFormat("en-US", options);
-      return formatter.format(new Date(dateString));
+       const date = new Date(dateString);
+    const formatter = new Intl.DateTimeFormat("en-US", options);
+    return formatter.format(date);
     } catch {
       return dateString;
     }
