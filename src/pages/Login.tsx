@@ -233,7 +233,7 @@ const Login = () => {
                   <div className="flex items-center justify-center mb-6">
                     <div className="flex items-center space-x-2">
                       <img
-                        src="/public/assets/img/farebulk_logo_crm.png" 
+                        src="/assets/img/farebulk_logo_crm.png" 
                         alt="Company Logo"
                         className="w-[10rem] h-auto object-contain"
                       />
