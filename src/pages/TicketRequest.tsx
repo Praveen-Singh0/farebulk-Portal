@@ -169,7 +169,7 @@ export default function Submission() {
       ? amount
       : num.toLocaleString("en-US", {
           style: "currency",
-          currency: "CAD",
+          currency: "USD",
         });
   };
 
