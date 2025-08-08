@@ -9,25 +9,25 @@ import {
 
 const images = [
   {
-    src: "/public/assets/img/LoginCarousel/image_1.jpg",
+    src: "/assets/img/LoginCarousel/image1.webp",
     alt: "Modern CRM Dashboard",
     title: "Advanced Analytics",
     description: "Get deep insights into your business performance",
   },
   {
-    src: "/public/assets/img/LoginCarousel/image_2.jpg",
+    src: "/assets/img/LoginCarousel/image2.webp",
     alt: "Team Collaboration",
     title: "Team Collaboration",
     description: "Work together seamlessly with your team",
   },
   {
-    src: "/public/assets/img/LoginCarousel/image_3.jpg",
+    src: "/assets/img/LoginCarousel/image3.webp",
     alt: "Customer Management",
     title: "Customer Management",
     description: "Manage all your customer relationships in one place",
   },
   {
-    src: "/public/assets/img/LoginCarousel/image_4.jpg",
+    src: "/assets/img/LoginCarousel/image4.webp",
     alt: "Sales Pipeline",
     title: "Sales Pipeline",
     description: "Track and optimize your sales process",
