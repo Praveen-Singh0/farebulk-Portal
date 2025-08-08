@@ -76,6 +76,7 @@ const Dashboard: React.FC = () => {
         );
         if (storedTodos) {
           const todos = JSON.parse(storedTodos);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const incompleteTodos = todos.filter((todo: any) => !todo.completed);
           setTodoCount(incompleteTodos.length);
         } else {
@@ -282,9 +283,9 @@ const Dashboard: React.FC = () => {
     setTodoCount(count);
   };
 
-  const url = `https://myfaredeal.us/?email=${encodeURIComponent(
-    user?.email || ""
-  )}&name=${encodeURIComponent(user?.userName || "")}`;
+  // const url = `https://myfaredeal.us/?email=${encodeURIComponent(
+  //   user?.email || ""
+  // )}&name=${encodeURIComponent(user?.userName || "")}`;
 
   return (
     <div className="flex h-screen bg-background">
@@ -453,15 +454,25 @@ const Dashboard: React.FC = () => {
               </div>
             )}
 
-            <div className="flex items-center gap-4">
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-2 py-1 rounded-lg text-white font-semibold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 transition-all duration-300 shadow-lg"
-              >
-                Auth Form
-              </a>
+           <div className="flex items-center gap-4">
+ <a
+    href={"#"}
+    target="_blank"
+        onClick={(e) => e.preventDefault()}
+
+    rel="noopener noreferrer"
+    className="relative group inline-block px-2 py-1 rounded-lg text-white font-semibold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 transition-all duration-300 shadow-lg cursor-not-allowed"
+  >
+    Auth Form
+    {/* Tooltip */}
+    <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 text-xs font-medium bg-gray-800 text-white px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+      Upgrade Pro
+      {/* Arrow */}
+      <span className="absolute left-1/2 -translate-x-1/2 -top-2 border-4 border-transparent border-b-gray-800"></span>
+    </span>
+  </a>
+
+
 
               {user.role !== "travel" && (
                 <button
