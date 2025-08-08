@@ -22,12 +22,22 @@ const app = express();
 
 app.use(cookieParser()); 
 
+
+const allowedOrigins = process.env.CORS_ORIGINS.split(',');
+
 const corsOptions = {
-  origin: process.env.CORS_DOMAIN,       
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 };
+
 
 app.get('/', (req, res) => { 
   res.send('API is running 🚀');
