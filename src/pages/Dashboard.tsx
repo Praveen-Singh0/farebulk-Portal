@@ -22,7 +22,7 @@ import { Bell } from "lucide-react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import TodoComponent from "./TodoComponent";
+import Notes from "./Notes";
 
 interface TicketRequest {
   _id: string;
@@ -57,9 +57,8 @@ const Dashboard: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] =
     useState<boolean>(false);
-  const [isTodoOpen, setIsTodoOpen] = useState<boolean>(false);
+  const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
   const [pendingRequests, setPendingRequests] = useState<TicketRequest[]>([]);
-  const [todoCount, setTodoCount] = useState<number>(0);
 
   // Check if we're on the dashboard overview page
   const isDashboardOverview =
@@ -67,63 +66,38 @@ const Dashboard: React.FC = () => {
     location.pathname === "/dashboard/" ||
     location.pathname === "/dashboard/overview";
 
-  // Load todo count from localStorage
-  useEffect(() => {
-    const loadTodoCount = (): void => {
-      try {
-        const storedTodos = localStorage.getItem(
-          `todos_${user?.userName || "default"}`
-        );
-        if (storedTodos) {
-          const todos = JSON.parse(storedTodos);
-          const incompleteTodos = todos.filter((todo: any) => !todo.completed);
-          setTodoCount(incompleteTodos.length);
-        } else {
-          setTodoCount(0);
-        }
-      } catch (error) {
-        console.error("Failed to load todo count:", error);
-        setTodoCount(0);
-      }
-    };
-
-    // Initial load
-    loadTodoCount();
-
-    // Listen for storage changes (for multi-tab sync)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === `todos_${user?.userName || "default"}`) {
-        loadTodoCount();
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-
-    // Optional: Set up interval to check for changes (in case of multiple tabs)
-    const interval = setInterval(loadTodoCount, 2000);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [user?.userName]);
-
   // Play custom notification sound
-  const playCustomNotificationSound = (count: number): void => {
-    const audio = new Audio("/sounds/notification.mp3");
-
-    const playSound = (): void => {
-      audio.currentTime = 0;
-      audio.play().catch((error) => {
-        console.log("Audio play failed:", error);
-      });
-    };
-
-    for (let i = 0; i < count; i++) {
+  const showSynchronizedNotifications = (
+    newRequests: TicketRequest[]
+  ): void => {
+    newRequests.forEach((request, index) => {
       setTimeout(() => {
-        playSound();
-      }, i * 1000);
-    }
+        // Play sound first
+        const audio = new Audio("/sounds/notification.mp3");
+        audio.currentTime = 0;
+        audio.play().catch((error) => {
+          console.log("Audio play failed:", error);
+        });
+
+        // Show toast immediately after sound starts
+        setTimeout(() => {
+          toast.info(
+            `${request.consultant} has submitted a ${request.requestFor} request for the ${request.ticketType}`,
+            {
+              position: "top-right",
+              autoClose: 5000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              onClick: () => {
+                setIsNotificationPanelOpen(true);
+              },
+            }
+          );
+        }, 100);
+      }, index * 1000);
+    });
   };
 
   // Get stored notifications from localStorage
@@ -150,32 +124,10 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Show toast notifications for new requests
-  const showToastNotifications = (newRequests: TicketRequest[]): void => {
-    newRequests.forEach((request, index) => {
-      setTimeout(() => {
-        toast.info(
-          `${request.consultant} has submitted a ${request.requestFor} request for the ${request.ticketType}`,
-          {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            onClick: () => {
-              setIsNotificationPanelOpen(true);
-            },
-          }
-        );
-      }, index * 2000);
-    });
-  };
-
   //EST time zone
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleString("en-US", {
-      timeZone: "America/New_York", // EST or EDT depending on the date
+      timeZone: "America/New_York",
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -213,26 +165,19 @@ const Dashboard: React.FC = () => {
 
         // Get previously notified request IDs
         const storedNotifiedIds = getStoredNotifications();
-
-        // Find new requests that haven't been notified yet
         const newRequests = userTickets.filter(
           (ticket: TicketRequest) => !storedNotifiedIds.includes(ticket._id)
         );
 
         if (newRequests.length > 0) {
-          // Update localStorage with all current pending request IDs
           const allCurrentIds = userTickets.map(
             (ticket: TicketRequest) => ticket._id
           );
           saveNotifiedRequests(allCurrentIds);
 
-          // Show notifications and play sound for new requests
-          setTimeout(() => {
-            showToastNotifications(newRequests);
-            playCustomNotificationSound(newRequests.length);
-          }, 1000);
+          // Use the synchronized notification function
+          showSynchronizedNotifications(newRequests);
         } else {
-          // Still update localStorage to clean up any resolved requests
           const allCurrentIds = userTickets.map(
             (ticket: TicketRequest) => ticket._id
           );
@@ -269,17 +214,13 @@ const Dashboard: React.FC = () => {
     setIsNotificationPanelOpen(true);
   };
 
-  const handleTodoClick = (): void => {
-    setIsTodoOpen(true);
+  const handleNotesClick = (): void => {
+    setIsNotesOpen(true);
   };
 
   const handleViewRequest = (): void => {
     setIsNotificationPanelOpen(false);
     navigate("/dashboard/ticket-request");
-  };
-
-  const handleTodoCountChange = (count: number): void => {
-    setTodoCount(count);
   };
 
   const url = `https://myfaredeal.us/?email=${encodeURIComponent(
@@ -401,11 +342,11 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Todo Component */}
-      <TodoComponent
-        isOpen={isTodoOpen}
-        onClose={() => setIsTodoOpen(false)}
-        onTodoCountChange={handleTodoCountChange}
+      {/* NOTES */}
+
+      <Notes
+        isOpen={isNotesOpen}
+        onClose={() => setIsNotesOpen(false)}
         userId={user?.userName || "default"}
       />
 
@@ -438,18 +379,14 @@ const Dashboard: React.FC = () => {
             </div>
 
             {user.role === "travel" && (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={handleTodoClick}
-                  className="relative focus:outline-none hover:bg-blue-100 bg-gray-200 p-2 rounded-full transition-colors"
+                  onClick={handleNotesClick}
+                  className="relative focus:outline-none hover:bg-blue-200 bg-gray-300 p-2 rounded-full transition-colors"
                 >
                   <StickyNote className="h-6 w-6 text-black" />
-                  {todoCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-black text-white text-xs font-semibold rounded-full px-1.5 min-w-[20px] h-5 flex items-center justify-center">
-                      {todoCount}
-                    </span>
-                  )}
                 </button>
+                Notes
               </div>
             )}
 

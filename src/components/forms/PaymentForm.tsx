@@ -3,9 +3,7 @@ import axios from "axios";
 import { toast } from "../../components/ui/use-toast";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
-
-
-interface TicketRequest { 
+interface TicketRequest {
   _id: string;
   passengerName: string;
   passengerEmail: string;
@@ -41,7 +39,7 @@ interface TicketRequest {
   __v: number;
   amount?: number;
   userName?: string;
-  email?: string; 
+  email?: string;
 }
 
 interface StatusData {
@@ -55,13 +53,14 @@ interface PaymentFormProps {
   closeModal: () => void;
 }
 
-
 const PaymentForm: React.FC<PaymentFormProps> = ({
   selectedRequest,
   fetchTicketRequests,
-  closeModal
+  closeModal,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [copyStatus, setCopyStatus] = useState<string>("");
+
   const stripe = useStripe();
   const elements = useElements();
 
@@ -72,7 +71,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       toast({
         title: "Error",
         description: "Stripe is not ready",
-        className: "bg-red-500 border border-red-200 text-white"
+        className: "bg-red-500 border border-red-200 text-white",
       });
       return;
     }
@@ -81,7 +80,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     try {
       // Create payment method from card element
       const { paymentMethod, error } = await stripe.createPaymentMethod({
-        type: 'card',
+        type: "card",
         card: elements.getElement(CardElement)!,
         billing_details: {
           name: selectedRequest.cardholderName || selectedRequest.passengerName,
@@ -115,14 +114,13 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
       // Handle 3D Secure if required
       if (response.data.requires_action) {
-        const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
-          response.data.client_secret
-        );
-        
+        const { error: confirmError, paymentIntent } =
+          await stripe.confirmCardPayment(response.data.client_secret);
+
         if (confirmError) {
           throw new Error(confirmError.message);
         }
-        
+
         if (paymentIntent?.status !== "succeeded") {
           throw new Error("Payment confirmation failed");
         }
@@ -132,73 +130,142 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       toast({
         title: "Payment Successful",
         description: `Payment of $${selectedRequest.mco} completed.`,
-        className: "bg-green-500 border border-green-200 text-white"
+        className: "bg-green-500 border border-green-200 text-white",
       });
-      
+
       await fetchTicketRequests();
       closeModal();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast({
         title: "Payment Failed",
         description: error.message || "Something went wrong.",
-        className: "bg-red-500 border border-red-200 text-white"
+        className: "bg-red-500 border border-red-200 text-white",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleCopyClick = async (TextCopy: string | number) => {
+    await navigator.clipboard.writeText(TextCopy.toString());
+    setCopyStatus("Copied");
+    setTimeout(() => setCopyStatus(""), 1000);
+  };
+  const CopyTooltip: React.FC<{ status: string }> = ({ status }) => {
+    if (!status) return null;
+    return (
+      <div className=" bg-gray-800 text-white text-xs px-2 py-1 rounded">
+        {status}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       {selectedRequest && (
-        <div className="bg-gray-50 p-4 rounded-md border">
+        <div className="bg-gray-50 p-4 rounded-md border" >
           <h3 className="font-semibold text-gray-700 mb-2">Payment Details</h3>
-          <p className="text-sm text-gray-600">
-            Amount: ${selectedRequest.mco}
-          </p>
-          <p className="text-sm text-gray-600">
-            Card Number: {selectedRequest.cardNumber || "Not provided"}
-          </p>
-          <p className="text-sm text-gray-600">
-            Expiry: {selectedRequest.expiryDate || "Not provided"}
-          </p>
-          <p className="text-sm text-gray-600">
-            cvv: {selectedRequest.cvv || "Not provided"}
-          </p>
-           <p className="text-sm text-gray-600">
-            ZIP: {selectedRequest.billingZipCode || "Not provided"}
-          </p>
+          <CopyTooltip status={copyStatus} />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                Amount: ${selectedRequest?.mco}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                Card Number: {selectedRequest?.cardNumber || "Not provided"}
+              </p>
+              <button
+                onClick={() =>
+                  handleCopyClick(selectedRequest?.cardNumber ?? "Not provided")
+                }
+                className="ml-2 p-1 text-gray-500 hover:bg-gray-100 rounded"
+                aria-label="Copy card number"
+              >
+                📋
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                Expiry: {selectedRequest?.expiryDate || "Not provided"}
+              </p>
+              <button
+                onClick={() =>
+                  handleCopyClick(selectedRequest?.expiryDate ?? "Not provided")
+                }
+                className="ml-2 p-1 text-gray-500 hover:bg-gray-100 rounded"
+                aria-label="Copy expiry date"
+              >
+                📋
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                CVV: {selectedRequest?.cvv || "Not provided"}
+              </p>
+              <button
+                onClick={() =>
+                  handleCopyClick(selectedRequest?.cvv ?? "Not provided")
+                }
+                className="ml-2 p-1 text-gray-500 hover:bg-gray-100 rounded"
+                aria-label="Copy CVV"
+              >
+                📋
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                ZIP: {selectedRequest?.billingZipCode || "Not provided"}
+              </p>
+              <button
+                onClick={() =>
+                  handleCopyClick(
+                    selectedRequest?.billingZipCode ?? "Not provided"
+                  )
+                }
+                className="ml-2 p-1 text-gray-500 hover:bg-gray-100 rounded"
+                aria-label="Copy ZIP"
+              >
+                📋
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} >
-        <div className="mb-4 border p-4 rounded-md w-[400px]" >
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4 border p-4 rounded-md w-[400px]">
           <CardElement
-            options={{ 
+            options={{
               style: {
                 base: {
-                  fontSize: '16px',
-                  color: '#424770',
-                  '::placeholder': {
-                    color: '#aab7c4',
+                  fontSize: "16px",
+                  color: "#424770",
+                  "::placeholder": {
+                    color: "#aab7c4",
                   },
-                }, 
+                },
                 invalid: {
-                  color: '#9e2146',
+                  color: "#9e2146",
                 },
               },
             }}
           />
         </div>
-        
-        <button 
-          type="submit" 
+
+        <button
+          type="submit"
           disabled={!stripe || isSubmitting}
           className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-50"
         >
-          {isSubmitting ? 'Processing...' : `Pay $${selectedRequest?.mco}`}
+          {isSubmitting ? "Processing..." : `Pay $${selectedRequest?.mco}`}
         </button>
       </form>
     </div>
