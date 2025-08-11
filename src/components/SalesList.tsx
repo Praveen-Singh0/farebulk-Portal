@@ -38,7 +38,7 @@ const SalesList = ({ saleData = [] }: Props) => {
   const formatDate = (dateString: string): string => {
     try {
       const options: Intl.DateTimeFormatOptions = {
-        timeZone: "Asia/Kolkata",
+        timeZone: "America/New_York",
         year: "numeric",
         month: "short",
         day: "2-digit",

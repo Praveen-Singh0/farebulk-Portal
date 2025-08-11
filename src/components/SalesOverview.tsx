@@ -7,7 +7,6 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 
-
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 
@@ -53,9 +52,10 @@ type ConsultantSale = {
 };
 
 const SalesOverview = () => {
-  dayjs.extend(utc);
-  dayjs.extend(timezone);
 
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
   const [salesData, setSalesData] = useState<SaleData[]>([]);
   const [consultantSales, setConsultantSales] = useState<ConsultantSale[]>([]);
@@ -73,10 +73,13 @@ const fetchSalesData = async (year: number, month: number) => {
     );
 
 
-    const filteredData = response.data.data.filter((item) => {
-  const itemDate = dayjs(item.createdAt).utc().local(); // Convert from UTC to local time
-  return itemDate.year() === year && itemDate.month() === month;
-});
+
+ const filteredData = response.data.data.filter((item) => {
+      const itemDate = dayjs(item.createdAt).tz("America/New_York");
+      return itemDate.year() === year && itemDate.month() === month;
+    });
+
+
 
 
     const processed: SaleData[] = filteredData.map((item) => {
@@ -184,7 +187,7 @@ useEffect(() => {
       );
     })}
   </select>
-</div>
+</div> 
 
 
       <Card>
