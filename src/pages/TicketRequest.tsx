@@ -1078,26 +1078,6 @@ export default function Submission() {
                             </select>
                           </div>
                         </div>
-
-                        {/* Remark Field */}
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-3">
-                            Remark
-                          </label>
-                          <textarea
-                            value={statusData.remark}
-                            onChange={(e) =>
-                              setStatusData((prev) => ({
-                                ...prev,
-                                remark: e.target.value,
-                              }))
-                            }
-                            rows={5}
-                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white/80 resize-none"
-                            placeholder="Enter your remarks here..."
-                          />
-                        </div>
-
                         {/* Submit Button */}
                           <div className="flex justify-end pt-4">
                             {statusData.paymentMethod === 'Authorize US' || statusData.paymentMethod === 'Flight Services' ? (
