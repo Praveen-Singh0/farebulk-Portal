@@ -4,16 +4,6 @@ const router = express.Router();
 
 const WEBSITES_CONFIG = [
   {
-    id: 'easyflightsbook',
-    name: 'EasyFlightsBook',
-    baseUrl: 'https://api.easyflightsbook.com/api',
-    endpoints: {
-      getUserDetails: '/bookFlight/userDetails',
-      deleteBooking: '/bookFlight'
-    },
-    active: true
-  },
-  {
     id: 'airticketspot',
     name: 'AirticketSpot',
     baseUrl: 'https://api.airticketspot.com/api',
@@ -24,15 +14,66 @@ const WEBSITES_CONFIG = [
     active: true
   },
   {
-    id: 'easyflightnow',
-    name: 'EasyFlightNow',
-    baseUrl: 'https://api.easyflightnow.com/api',
+    id: 'myfaredealCOM',
+    name: 'Myfaredeal_COM',
+    baseUrl: 'https://api.myfaredeal.com/api',
     endpoints: {
       getUserDetails: '/bookFlight/userDetails',
       deleteBooking: '/bookFlight'
     },
     active: true
   },
+  {
+    id: 'myfaredealcouk',
+    name: 'Myfaredeal.CO.UK',
+    baseUrl: 'https://api.myfaredeal.co.uk/api',
+    endpoints: {
+      getUserDetails: '/bookFlight/userDetails',
+      deleteBooking: '/bookFlight'
+    },
+    active: true
+  },
+  {
+    id: 'myfaredealCA',
+    name: 'Myfaredeal.CA',
+    baseUrl: 'https://api.myfaredeal.ca/api',
+    endpoints: {
+      getUserDetails: '/bookFlight/userDetails',
+      deleteBooking: '/bookFlight'
+    },
+    active: true
+  },
+  {
+    id: 'farebulktravels',
+    name: 'Farebulktravels',
+    baseUrl: 'https://api.farebulktravels.com/api',
+    endpoints: {
+      getUserDetails: '/bookFlight/userDetails',
+      deleteBooking: '/bookFlight'
+    },
+    active: true
+  },
+  {
+    id: 'flyeasydeal',
+    name: 'Flyeasydeal',
+    baseUrl: 'https://api.flyeasydeal.com/api',
+    endpoints: {
+      getUserDetails: '/bookFlight/userDetails',
+      deleteBooking: '/bookFlight'
+    },
+    active: true
+  },
+  {
+    id: 'flytraveltickets',
+    name: 'Flytraveltickets',
+    baseUrl: 'https://api.flytraveltickets.com/api',
+    endpoints: {
+      getUserDetails: '/bookFlight/userDetails',
+      deleteBooking: '/bookFlight'
+    },
+    active: true
+  },
+  
 ];
 
 // Helper function to fetch data from a single website
