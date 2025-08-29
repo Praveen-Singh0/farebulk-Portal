@@ -6,8 +6,8 @@ interface CallFormData {
   destination: string;
   callDuration: string;
   status: string;
-  callType: string;
-  date: string; // Added date field
+  callConversation: string;
+  date: string;
 }
 
 const CallDescriptionPopup: React.FC = () => {
@@ -16,8 +16,8 @@ const CallDescriptionPopup: React.FC = () => {
     sourceNumber: '',
     destination: '',
     callDuration: '',
-    status: '',
-    callType: '',
+    status: 'Answered',
+    callConversation: '',
     date: ''
   });
 
@@ -40,14 +40,14 @@ const CallDescriptionPopup: React.FC = () => {
     };
     
     console.log('Call Form Data for API:', apiData);
-    alert('Form submitted! Check console for data');
+    alert('Form submitted!');
     
     setFormData({
       sourceNumber: '',
       destination: '',
       callDuration: '',
-      status: '',
-      callType: '',
+      status: 'Answered', // Reset to default
+      callConversation: '', // Changed from callType
       date: ''
     });
     setIsOpen(false);
@@ -66,6 +66,17 @@ const CallDescriptionPopup: React.FC = () => {
     if (value.length <= 12) { // Limit to 12 digits
       handleInputChange('sourceNumber', value);
     }
+  };
+
+  // Auto-resize textarea based on content
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const textarea = e.target;
+    handleInputChange('callConversation', textarea.value);
+    
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    // Set height to scrollHeight to expand as needed
+    textarea.style.height = textarea.scrollHeight + 'px';
   };
 
   return (
@@ -155,40 +166,24 @@ const CallDescriptionPopup: React.FC = () => {
                   />
                 </div>
 
-                {/* Status Dropdown */}
+                {/* Call Conversation - Auto-expanding textarea */}
                 <div className="space-y-2">
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                    Status *
+                  <label htmlFor="callConversation" className="block text-sm font-medium text-gray-700">
+                    Call Conversation *
                   </label>
-                  <select
-                    id="status"
-                    value={formData.status}
-                    onChange={(e) => handleInputChange('status', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none bg-white"
+                  <textarea
+                    id="callConversation"
+                    value={formData.callConversation}
+                    onChange={handleTextareaChange}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none overflow-hidden min-h-[42px]"
+                    placeholder="Describe the call conversation in detail..."
+                    rows={1}
                     required
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Answered">Answered</option>
-                    <option value="Not Answered">Not Answered</option>
-                    <option value="Busy">Busy</option>
-                    <option value="Failed">Failed</option>
-                  </select>
-                </div>
-
-                {/* Call Type */}
-                <div className="space-y-2">
-                  <label htmlFor="callType" className="block text-sm font-medium text-gray-700">
-                    Call Type *
-                  </label>
-                  <input
-                    id="callType"
-                    type="text"
-                    value={formData.callType}
-                    onChange={(e) => handleInputChange('callType', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="e.g., Inbound, Outbound, Internal"
-                    required
+                    style={{ height: 'auto' }}
                   />
+                  <p className="text-xs text-gray-500">
+                    {formData.callConversation.length} characters
+                  </p>
                 </div>
 
                 {/* Submit Button */}
