@@ -6,6 +6,7 @@ import { useToast } from '../ui/use-toast';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw, } from "lucide-react";
+import CallDescriptionPopup from './CallDescription';
 
 
 interface TravelConsultantFormData {
@@ -60,7 +61,6 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
     const date = new Date(estDate);
     return date.toTimeString().slice(0, 5); // returns "HH:mm"
   };
-
 
 
   const initialFormData: TravelConsultantFormData = {
@@ -658,7 +658,7 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
           </div>
         </div>
 
-        <Button type="submit" className="w-full bg-zinc-900 hover:bg-blue-700">
+        <Button type="submit" className="w-full bg-blue-700 hover:bg-blue-600">
           {loading ? (
             <>
               <RefreshCw className="animate-spin text-white-500" />
@@ -669,6 +669,8 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
           )}
         </Button>
       </form>
+
+      <CallDescriptionPopup />
     </div>
   );
 };
