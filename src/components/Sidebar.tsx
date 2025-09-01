@@ -1,5 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
-import { cn } from '../lib/utils';
+import { Link, useLocation } from "react-router-dom";
+import { cn } from "../lib/utils";
 import {
   LayoutDashboard,
   BarChart3,
@@ -10,46 +10,58 @@ import {
   User,
   ClipboardList,
   X,
-  Plane
-} from 'lucide-react';
-import { Button } from './ui/button';
+  Plane,
+} from "lucide-react";
+import { Button } from "./ui/button";
 
 interface SidebarProps {
-  role: 'admin' | 'travel' | 'ticket';
+  role: "admin" | "travel" | "ticket";
 }
 
 const Sidebar = ({ role }: SidebarProps) => {
   const location = useLocation();
 
   const adminMenu = [
-    { name: 'Dashboard', path: '/dashboard/overview', icon: LayoutDashboard },
-    { name: 'Sales Overview', path: '/dashboard/sales', icon: BarChart3 },
-    { name: 'Consultants', path: '/dashboard/consultants', icon: Users },
-    { name: 'Flight Bookings', path: '/dashboard/APIBooking', icon: Plane },
-    { name: 'Reports', path: '/dashboard/reports', icon: FileText },
-    { name: 'Settings', path: '/dashboard/settings', icon: Settings },
+    { name: "Dashboard", path: "/dashboard/overview", icon: LayoutDashboard },
+    { name: "Sales Overview", path: "/dashboard/sales", icon: BarChart3 },
+    { name: "Call Logs", path: "/dashboard/callLogs", icon: BarChart3 },
+    { name: "Consultants", path: "/dashboard/consultants", icon: Users },
+    { name: "Flight Bookings", path: "/dashboard/APIBooking", icon: Plane },
+    { name: "Reports", path: "/dashboard/reports", icon: FileText },
+    { name: "Settings", path: "/dashboard/settings", icon: Settings },
   ];
 
   const travelConsultantMenu = [
-    { name: 'Dashboard', path: '/dashboard/overview', icon: LayoutDashboard },
-    { name: 'Add Sale', path: '/dashboard/forms', icon: ShoppingCart },
-    { name: 'My Sales', path: '/dashboard/my-sales', icon: BarChart3 },
-    { name: 'My Submissions', path: '/dashboard/submissions', icon: ClipboardList },
-    { name: 'Flight Bookings', path: '/dashboard/APIBooking', icon: Plane },
-    { name: 'My Profile', path: '/dashboard/profile', icon: User },
+    { name: "Dashboard", path: "/dashboard/overview", icon: LayoutDashboard },
+    { name: "Add Sale", path: "/dashboard/forms", icon: ShoppingCart },
+    { name: "My Sales", path: "/dashboard/my-sales", icon: BarChart3 },
+    {
+      name: "My Submissions",
+      path: "/dashboard/submissions",
+      icon: ClipboardList,
+    },
+    { name: "Flight Bookings", path: "/dashboard/APIBooking", icon: Plane },
+    { name: "My Profile", path: "/dashboard/profile", icon: User },
   ];
 
   const ticketConsultantMenu = [
-    { name: 'Dashboard', path: '/dashboard/overview', icon: LayoutDashboard },
-    { name: 'Ticket Request', path: '/dashboard/ticket-request', icon: ShoppingCart },
-    { name: 'My Sales', path: '/dashboard/my-sales', icon: BarChart3 },
-    { name: 'Flight Bookings', path: '/dashboard/APIBooking', icon: Plane },
-    { name: 'My Profile', path: '/dashboard/profile', icon: User },
+    { name: "Dashboard", path: "/dashboard/overview", icon: LayoutDashboard },
+    {
+      name: "Ticket Request",
+      path: "/dashboard/ticket-request",
+      icon: ShoppingCart,
+    },
+            { name: "Call Logs", path: "/dashboard/callLogs", icon: BarChart3 },
+
+    { name: "My Sales", path: "/dashboard/my-sales", icon: BarChart3 },
+    { name: "Flight Bookings", path: "/dashboard/APIBooking", icon: Plane },
+    { name: "My Profile", path: "/dashboard/profile", icon: User },
   ];
 
-  const menu = role === 'admin'
-    ? adminMenu
-    : role === 'travel'
+  const menu =
+    role === "admin"
+      ? adminMenu
+      : role === "travel"
       ? travelConsultantMenu
       : ticketConsultantMenu;
 
@@ -58,16 +70,18 @@ const Sidebar = ({ role }: SidebarProps) => {
       <div className="p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-foreground">
-            {role === 'admin' ? 'Admin Dashboard' :
-              role === 'travel' ? 'Travel Consultant' :
-                'Ticket Consultant'}
+            {role === "admin"
+              ? "Admin Dashboard"
+              : role === "travel"
+              ? "Travel Consultant"
+              : "Ticket Consultant"}
           </h2>
           <Button
             variant="ghost"
             size="icon"
             className="lg:hidden"
             onClick={() => {
-              const event = new CustomEvent('toggleSidebar');
+              const event = new CustomEvent("toggleSidebar");
               window.dispatchEvent(event);
             }}
           >
@@ -99,4 +113,4 @@ const Sidebar = ({ role }: SidebarProps) => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;

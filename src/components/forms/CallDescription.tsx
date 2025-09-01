@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { Phone, X } from 'lucide-react';
+import axios from 'axios';
+import { toast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/use-auth';
+
 
 interface CallFormData {
   sourceNumber: string;
@@ -8,9 +12,13 @@ interface CallFormData {
   status: string;
   callConversation: string;
   date: string;
+  user?: string;
 }
 
 const CallDescriptionPopup: React.FC = () => {
+
+    const { user } = useAuth();
+
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<CallFormData>({
     sourceNumber: '',
@@ -18,7 +26,8 @@ const CallDescriptionPopup: React.FC = () => {
     callDuration: '',
     status: 'Answered',
     callConversation: '',
-    date: ''
+    date: '',
+    user: user?.userName || ''
   });
 
   // Get current date in DD/MM/YYYY format
@@ -30,28 +39,50 @@ const CallDescriptionPopup: React.FC = () => {
     return `${day}/${month}/${year}`;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+
+
+  // In your React component, update the handleSubmit function:
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  try {
     // Add current date to form data for API request
     const apiData = {
       ...formData,
       date: getCurrentDate()
     };
+
+    await axios.post(`${import.meta.env.VITE_BASE_URL}/callDescription`, {
+      apiData
+    });
     
-    console.log('Call Form Data for API:', apiData);
-    alert('Form submitted!');
+    toast({
+      title: "Call description submitted successfully",
+      description: `Call logged for ${apiData.sourceNumber}`,
+      className: "bg-green-500 border border-green-200",
+    });
     
+    // Reset form
     setFormData({
       sourceNumber: '',
       destination: '',
       callDuration: '',
-      status: 'Answered', // Reset to default
-      callConversation: '', // Changed from callType
+      status: 'Answered',
+      callConversation: '',
       date: ''
     });
     setIsOpen(false);
-  };
+    
+  } catch (error) {
+    console.error('Error submitting call description:', error);
+    toast({
+      title: "Error submitting call description",
+      description: "Something went wrong",
+      className: "bg-red-500 border border-red-200",
+    });
+  }
+};
+
 
   const handleInputChange = (field: keyof CallFormData, value: string) => {
     setFormData(prev => ({

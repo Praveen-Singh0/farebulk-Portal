@@ -23,6 +23,7 @@ import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Notes from "./Notes";
+import CallDescriptionsTable from "./CallDescriptionsTable";
 
 interface TicketRequest {
   _id: string;
@@ -435,6 +436,8 @@ const Dashboard: React.FC = () => {
             <Route path="/" element={<Navigate to="overview" replace />} />
             <Route path="overview" element={<Overview />} />
             <Route path="sales" element={<SalesOverview />} />
+            <Route path="callLogs" element={<CallDescriptionsTable />} />
+
             <Route
               path="forms"
               element={

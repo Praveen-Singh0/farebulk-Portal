@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area } from 'recharts';
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, FileSpreadsheet } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/use-auth';
@@ -71,6 +71,20 @@ interface ChartConfig {
   data: ChartData[];
   dataKey: string;
   fill: string;
+}
+
+// Your existing interfaces...
+interface CallDescription {
+  _id: string;
+  sourceNumber: string;
+  destination: string;
+  callDuration: string;
+  status: string;
+  callConversation: string;
+  date: string;
+  createdAt: string;
+  updatedAt: string;
+  user?: string;
 }
 
 // Travel consultant dummy data (keeping for non-admin roles)
@@ -152,9 +166,39 @@ const Overview: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [ticketRequests, setTicketRequests] = useState<TicketRequest[]>([]);
 
+
+  // New state for call descriptions
+  const [callDescriptions, setCallDescriptions] = useState<CallDescription[]>([]);
+  const [callDescriptionsLoading, setCallDescriptionsLoading] = useState<boolean>(false);
+
   const isAdmin = user?.role === 'admin';
   const isTravelConsultant = user?.role === 'travel';
   const isTicketConsultant = user?.role === 'ticket';
+
+
+   useEffect(() => {
+    const fetchCallDescriptions = async (): Promise<void> => {
+      // Only fetch for admin and ticket roles
+      if (!isAdmin && !isTicketConsultant) return;
+      
+      try {
+        setCallDescriptionsLoading(true);
+        const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/call-descriptions`, {
+          withCredentials: true
+        });
+
+        if (response.data.success) {
+          setCallDescriptions(response.data.data);
+        }
+      } catch (err) {
+        console.error('Error fetching call descriptions:', err);
+      } finally {
+        setCallDescriptionsLoading(false);
+      }
+    };
+
+    fetchCallDescriptions();
+  }, [isAdmin, isTicketConsultant]);
 
   // Fetch sales data from API
   useEffect(() => {
@@ -283,7 +327,190 @@ const Overview: React.FC = () => {
 
   const metrics = processedData();
 
+// Add this function to your Overview component
+const downloadCallDescriptionsExcel = () => {
+  const headers = [
+    "S.No",
+    "Source Number", 
+    "Destination",
+    "Duration",
+    "Status",
+    "Conversation",
+    "Call Date",
+    "Created At"
+  ];
 
+  const csvContent = [
+    headers.join(","),
+    ...callDescriptions.map((call, index) =>
+      [
+        index + 1,
+        `"${call.sourceNumber}"`,
+        `"${call.destination}"`,
+        `"${call.callDuration}"`,
+        `"${call.status}"`,
+        `"${call.callConversation.replace(/"/g, '""')}"`, // Escape quotes in conversation
+        `"${call.date}"`,
+          `"${call.user}"`,
+        `"${format(new Date(call.createdAt), "MMM dd, yyyy 'at' hh:mm a")}"`,
+      ].join(",")
+    ),
+  ].join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute(
+    "download",
+    `call-descriptions-${new Date().toISOString().split("T")[0]}.csv`
+  );
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+// Updated CallDescriptionsSection component
+const CallDescriptionsSection: React.FC = () => {
+  const formatDate = (dateString: string): string => {
+    try {
+      const options: Intl.DateTimeFormatOptions = {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      };
+      const formatter = new Intl.DateTimeFormat('en-US', options);
+      return formatter.format(new Date(dateString));
+    } catch {
+      return dateString;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusColors = {
+      'Answered': 'bg-green-100 text-green-800',
+      'Missed': 'bg-red-100 text-red-800',
+      'Busy': 'bg-yellow-100 text-yellow-800',
+      'Declined': 'bg-red-100 text-red-800',
+      'No Answer': 'bg-gray-100 text-gray-800'
+    };
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[status] || 'bg-gray-100 text-gray-800'}`}>
+        {status}
+      </span>
+    );
+  };
+
+  if (callDescriptionsLoading) {
+    return (
+      <Card className="col-span-full">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Call Descriptions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-32">
+            <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
+            <span className="ml-2 text-gray-600">Loading call descriptions...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+ return (
+  <Card className="col-span-full">
+    <CardHeader className="flex flex-row items-center justify-between">
+      <CardTitle className="text-2xl font-bold">Call Descriptions</CardTitle>
+      <button
+        onClick={downloadCallDescriptionsExcel}
+        disabled={callDescriptions.length === 0}
+        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+        title="Download as Excel/CSV"
+      >
+        <FileSpreadsheet className="h-4 w-4" />
+        <span className="hidden sm:inline">Excel</span>
+      </button>
+    </CardHeader>
+    <CardContent>
+      {callDescriptions.length === 0 ? (
+        <div className="text-center p-8 text-gray-500">
+          No call descriptions found.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full table-fixed"> {/* Added table-fixed for consistent column widths */}
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left p-3 font-semibold text-gray-700 w-32">Source Number</th>
+                <th className="text-left p-3 font-semibold text-gray-700 w-32">Destination</th>
+                <th className="text-left p-3 font-semibold text-gray-700 w-20">Duration</th>
+                <th className="text-left p-3 font-semibold text-gray-700 w-24">Status</th>
+                <th className="text-left p-3 font-semibold text-gray-700 w-32">Conversation</th> {/* Fixed width */}
+                                <th className="text-left p-3 font-semibold text-gray-700 w-24">Agent</th> {/* Fixed width */}
+
+                <th className="text-left p-3 font-semibold text-gray-700 w-28">Call Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {callDescriptions.map((call) => (
+                <tr key={call._id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="p-3">
+                    <span className="font-mono text-sm bg-blue-50 px-2 py-1 rounded">
+                      {call.sourceNumber}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <span className="font-mono text-sm bg-purple-50 px-2 py-1 rounded">
+                      {call.destination}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <span className="font-medium text-gray-900">{call.callDuration}</span>
+                  </td>
+                  <td className="p-3">
+                    {getStatusBadge(call.status)}
+                  </td>
+                  <td className="p-3 relative group"> {/* Added relative and group for tooltip */}
+                    <div className="w-full">
+                      <p className="text-sm text-gray-900 truncate cursor-help">
+                        {call.callConversation}
+                      </p>
+                      {/* Tooltip */}
+                      {call.callConversation.length > 60 && (
+                        <div className="absolute left-0 top-full mt-2 w-80 p-3 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 max-h-40 overflow-y-auto">
+                          <div className="break-words">
+                            {call.callConversation}
+                          </div>
+                          {/* Arrow pointing up */}
+                          <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-800 rotate-45"></div>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                   <td className="p-3">
+                    <span className="text-sm text-gray-700">{call.user || " - "}</span>
+                  </td>
+                  <td className="p-3">
+                    <span className="text-sm text-gray-700">{call.date}</span>
+                  </td>
+                 
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </CardContent>
+  </Card>
+);
+};
+
+
+ 
   // Generate chart data based on timeframe
   const getChartData = (): ChartConfig => {
     if (!metrics) return { data: [], dataKey: 'month', fill: '#8884d8' };
@@ -610,6 +837,9 @@ const Overview: React.FC = () => {
         </div>
 
         <RecentSales />
+
+                <CallDescriptionsSection />
+
 
         {/* Charts */}
         <div className="grid gap-6 md:grid-cols-2">

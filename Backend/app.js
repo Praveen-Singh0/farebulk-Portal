@@ -16,6 +16,7 @@ const ticketRequestStatusRoutes = require('./routes/ticketRequestStatusRoutes');
 const HandleAuthUSPayment = require('./routes/HandleAuthUSPayment');
 const HandleStripePayment = require('./routes/HandleStripePayment');
 const multiSiteCrmRoutes = require('./routes/multiSiteCrm');
+const callDescriptionRoutes = require('./routes/callDescriptionRoutes');
 
 
 const app = express();
@@ -56,6 +57,7 @@ app.use('/api/ticket-requests-AuthrizeUS', HandleAuthUSPayment);
 app.use('/api/stripe', HandleStripePayment); 
 app.use('/api/items', itemRoutes);
 app.use('/api', multiSiteCrmRoutes);
+app.use('/api', callDescriptionRoutes);
 
 app.get('/api/dashboard', verifyUser, async (req, res) => {
   try {
