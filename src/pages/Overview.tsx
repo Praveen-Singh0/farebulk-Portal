@@ -389,17 +389,9 @@ const CallDescriptionsSection: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusColors = {
-      'Answered': 'bg-green-100 text-green-800',
-      'Missed': 'bg-red-100 text-red-800',
-      'Busy': 'bg-yellow-100 text-yellow-800',
-      'Declined': 'bg-red-100 text-red-800',
-      'No Answer': 'bg-gray-100 text-gray-800'
-    };
-    
+  const getStatusBadge = (status: string) => {    
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[status] || 'bg-gray-100 text-gray-800'}`}>
+      <span className={`px-2 py-1 rounded-full text-xs font-medium 'bg-gray-100 text-gray-800'`}>
         {status}
       </span>
     );
