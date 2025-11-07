@@ -52,24 +52,8 @@ const authorizeUsPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid amount format' });
     }
 
-    // Updated billing address using actual billing fields from ticketRequest
-    const billTo = new APIContracts.CustomerAddressType();
-    billTo.setFirstName(ticketRequest.billingFirstName || '');
-    billTo.setLastName(ticketRequest.billingLastName || '');
-    billTo.setAddress(ticketRequest.billingAddress || '');
-    billTo.setCity(ticketRequest.billingCity || '');
-    billTo.setState(ticketRequest.billingState || '');
-    billTo.setZip(ticketRequest.billingZipCode || '');
-    billTo.setCountry(ticketRequest.billingCountry || '');
-    billTo.setPhoneNumber(ticketRequest.billingPhone || ticketRequest.phoneNumber || '');
-
-    // Ensure email is properly set
-    const customerEmail = ticketRequest.billingEmail || ticketRequest.passengerEmail || '';
-    if (customerEmail) {
-      billTo.setEmail(customerEmail);
-    }
-
-    console.log('Setting billing email:', customerEmail);
+  // Use billing address only for internal user details, do not send to Authorize.Net
+  // (No billTo object will be set on the transactionRequest)
 
     // Add custom fields for ticket information using correct XML structure
     const userFields = {
@@ -98,10 +82,11 @@ const authorizeUsPayment = async (req, res) => {
     };
 
     const transactionRequest = new APIContracts.TransactionRequestType();
-    transactionRequest.setTransactionType(APIContracts.TransactionTypeEnum.AUTHCAPTURETRANSACTION);
-    transactionRequest.setPayment(paymentType);
-    transactionRequest.setAmount(amount);
-    transactionRequest.setBillTo(billTo);
+
+  transactionRequest.setTransactionType(APIContracts.TransactionTypeEnum.AUTHCAPTURETRANSACTION);
+  transactionRequest.setPayment(paymentType);
+  transactionRequest.setAmount(amount);
+  // Do NOT set billTo (billing address) on transactionRequest
 
     // Set user fields using the correct structure
     transactionRequest.setUserFields(userFields);
