@@ -2,6 +2,7 @@ const { APIContracts, APIControllers, Constants: SDKConstants } = require('autho
 const TicketRequestStatus = require('../models/TicketRequestStatus');
 const TicketRequest = require('../models/TicketRequest');
 const { User } = require('../models/User');
+const { convertCurrency } = require('../utils/currencyConverter');
 require('dotenv').config();
 
 
@@ -47,8 +48,15 @@ const authorizeUsPayment = async (req, res) => {
     const paymentType = new APIContracts.PaymentType();
     paymentType.setCreditCard(creditCard);
   
-    const amount = parseFloat(ticketRequest.mco);
-    if (isNaN(amount)) {
+    // Convert amount to USD if needed (Authorize.Net requires USD)
+    const currency = ticketRequest.currency || 'USD';
+    let amountToCharge = parseFloat(ticketRequest.mco);
+    
+    if (currency !== 'USD') {
+      amountToCharge = convertCurrency(amountToCharge, currency, 'USD');
+    }
+    
+    if (isNaN(amountToCharge)) {
       return res.status(400).json({ success: false, message: 'Invalid amount format' });
     }
 
@@ -85,7 +93,7 @@ const authorizeUsPayment = async (req, res) => {
 
   transactionRequest.setTransactionType(APIContracts.TransactionTypeEnum.AUTHCAPTURETRANSACTION);
   transactionRequest.setPayment(paymentType);
-  transactionRequest.setAmount(amount);
+  transactionRequest.setAmount(amountToCharge);
   // Do NOT set billTo (billing address) on transactionRequest
 
     // Set user fields using the correct structure
@@ -118,12 +126,26 @@ const authorizeUsPayment = async (req, res) => {
               ticketRequest.status = 'Charge';
               await ticketRequest.save();
 
+              // Calculate sale amounts with currency support
+              const currency = ticketRequest.currency || 'USD';
+              const mcoAmount = parseFloat(ticketRequest.mco) || 0;
+              const saleAmountOriginal = mcoAmount - (mcoAmount * 0.15);
+              
+              let saleAmountUSD = saleAmountOriginal;
+              if (currency !== 'USD') {
+                saleAmountUSD = convertCurrency(saleAmountOriginal, currency, 'USD');
+              }
+
               const ticketRequestStatus = new TicketRequestStatus({
                 ticketRequest,
                 status: 'Charge',
                 paymentMethod: 'Authorize US',
                 remark: 'Payment successful via Authorize.Net',
                 updatedBy,
+                currency,
+                saleAmountOriginal,
+                saleAmountUSD,
+                exchangeRate: ticketRequest.exchangeRate || 1
               });
               await ticketRequestStatus.save();
 
@@ -134,6 +156,9 @@ const authorizeUsPayment = async (req, res) => {
                 message: 'Payment successful and ticket status updated',
                 transactionId: transactionResponse.getTransId(),
                 authCode: transactionResponse.getAuthCode(),
+                currency: currency,
+                originalAmount: mcoAmount,
+                chargedAmountUSD: amountToCharge,
                 customFields: {
                   ticketType: ticketRequest.ticketType,
                   requestFor: ticketRequest.requestFor,

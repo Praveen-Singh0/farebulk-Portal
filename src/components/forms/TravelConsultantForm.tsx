@@ -34,6 +34,7 @@ interface TravelConsultantFormData {
   billingState: string;
   billingZipCode: string;
   billingCountry: string;
+  currency: string;
 }
 
 const TravelConsultantForm = ({ user }: { user: { email: string; role: string; userName?: string } }) => {
@@ -87,7 +88,8 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
     billingCity: '',
     billingState: '',
     billingZipCode: '',
-    billingCountry: ''
+    billingCountry: '',
+    currency: 'USD'
   };
 
   const [formData, setFormData] = useState<TravelConsultantFormData>(initialFormData);
@@ -466,7 +468,26 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ticketCost">Ticket Cost (USD) *</Label>
+            <Label htmlFor="currency">Currency *</Label>
+            <select
+              id="currency"
+              value={formData.currency}
+              onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="USD">🇺🇸 USD - US Dollar</option>
+              <option value="INR">🇮🇳 INR - Indian Rupee</option>
+              <option value="EUR">🇪🇺 EUR - Euro</option>
+              <option value="GBP">🇬🇧 GBP - British Pound</option>
+              <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
+              <option value="AUD">🇦🇺 AUD - Australian Dollar</option>
+            </select>
+            <p className="text-xs text-gray-500">Select the currency for this ticket request</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="ticketCost">Ticket Cost ({formData.currency}) *</Label>
             <Input
               id="ticketCost"
               type="number"
@@ -480,7 +501,7 @@ const TravelConsultantForm = ({ user }: { user: { email: string; role: string; u
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="mco">MCO (USD) *</Label>
+            <Label htmlFor="mco">MCO ({formData.currency}) *</Label>
             <Input
               id="mco"
               type="number"

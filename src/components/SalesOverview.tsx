@@ -21,12 +21,19 @@ type TicketRequestStatus = {
     airlineCode:string;
     ticketCost: string;
     mco: string;
+    currency?: string;
+    mcoUSD?: string;
+    ticketCostUSD?: string;
   };
   createdAt: string;
   status: string;
   paymentMethod: string;
   updatedBy: string;
   updatedAt: string;
+  currency?: string;
+  saleAmountOriginal?: number;
+  saleAmountUSD?: number;
+  exchangeRate?: number;
 };
 
 type SaleData = {
@@ -83,8 +90,18 @@ const fetchSalesData = async (year: number, month: number) => {
 
 
     const processed: SaleData[] = filteredData.map((item) => {
-      const mco = parseFloat(item.ticketRequest.mco);
-      const saleAmount = mco * 0.85;
+      // Use USD converted amounts if available, otherwise calculate from original
+      const mcoUSD = item.ticketRequest.mcoUSD 
+        ? parseFloat(item.ticketRequest.mcoUSD)
+        : parseFloat(item.ticketRequest.mco);
+      
+      // Use saleAmountUSD if available from backend, otherwise calculate
+      const saleAmount = item.saleAmountUSD || (mcoUSD * 0.85);
+      
+      const ticketCostUSD = item.ticketRequest.ticketCostUSD
+        ? parseFloat(item.ticketRequest.ticketCostUSD)
+        : parseFloat(item.ticketRequest.ticketCost);
+      
       return {
         consultant: item.ticketRequest.consultant,
         passengerName: item.ticketRequest.passengerName,
@@ -92,9 +109,9 @@ const fetchSalesData = async (year: number, month: number) => {
         passengerEmail: item.ticketRequest.passengerEmail,
         ticketType: item.ticketRequest.ticketType,
         confirmationCode: item.ticketRequest.confirmationCode,
-        ticketCostUSD: parseFloat(item.ticketRequest.ticketCost),
+        ticketCostUSD,
         requestFor: item.ticketRequest.requestFor,
-        mcoUSD: mco,
+        mcoUSD,
         saleAmount,
         status: item.status,
         paymentMethod: item.paymentMethod,
@@ -142,7 +159,7 @@ useEffect(() => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Final MCO</CardTitle>
+            <CardTitle className="text-sm font-medium">Final MCO (USD)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalSales.toFixed(2)}</div>

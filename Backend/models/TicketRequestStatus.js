@@ -21,6 +21,12 @@ const ticketRequestStatusSchema = new mongoose.Schema({
     required: true
   },
   paymentIntentId: { type: String },
+  
+  // Multi-currency support - store currency info at time of status update
+  currency: { type: String },
+  saleAmountOriginal: { type: Number }, // Sale in original currency
+  saleAmountUSD: { type: Number }, // Sale converted to USD
+  exchangeRate: { type: Number }
 
 }, { timestamps: true });
 

@@ -1,22 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area } from 'recharts';
-import { RefreshCw, FileSpreadsheet } from "lucide-react";
-import { format } from "date-fns";
+import { RefreshCw } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/use-auth';
 import dayjs from 'dayjs';
-
 import axios from 'axios';
 
-// Define types
-interface SaleData {
-  id: number;
-  client: string;
-  destination: string;
-  amount: number;
-  date: string;
-  status: string;
-}
 
 interface TicketRequest {
   _id?: string;
@@ -33,6 +22,10 @@ interface TicketRequest {
   time: string;
   createdAt: string;
   airlineCode: string;
+  currency?: string;
+  exchangeRate?: number;
+  ticketCostUSD?: string;
+  mcoUSD?: string;
 }
 
 interface SalesDataItem {
@@ -43,6 +36,10 @@ interface SalesDataItem {
   updatedAt: string;
   updatedBy?: string;
   ticketRequest?: TicketRequest;
+  currency?: string;
+  saleAmountOriginal?: number;
+  saleAmountUSD?: number;
+  exchangeRate?: number;
 }
 
 interface ChartData {
@@ -73,86 +70,13 @@ interface ChartConfig {
   fill: string;
 }
 
-// Your existing interfaces...
-interface CallDescription {
-  _id: string;
-  sourceNumber: string;
-  destination: string;
-  callDuration: string;
-  status: string;
-  callConversation: string;
-  date: string;
-  createdAt: string;
-  updatedAt: string;
-  user?: string;
-}
-
-// Travel consultant dummy data (keeping for non-admin roles)
-const myPersonalSales: SaleData[] = [
-  { id: 1, client: 'John Smith', destination: 'Dubai', amount: 0, date: '2025-05-25', status: 'Confirmed' },
-  { id: 2, client: 'Sarah Johnson', destination: 'London', amount: 0, date: '2025-05-24', status: 'Pending' },
-  { id: 3, client: 'Mike Brown', destination: 'Tokyo', amount: 0, date: '2025-05-23', status: 'Confirmed' },
-  { id: 4, client: 'Emma Davis', destination: 'Paris', amount: 0, date: '2025-05-22', status: 'Confirmed' },
-  { id: 5, client: 'David Wilson', destination: 'New York', amount: 0, date: '2025-05-21', status: 'Cancelled' },
-];
-
-
-const travelConsultantData = {
-  monthlySales: [
-    { month: 'May 2024', sales: 2800 },
-    { month: 'Jun 2024', sales: 3200 },
-    { month: 'Jul 2024', sales: 2900 },
-    { month: 'Aug 2024', sales: 3400 },
-    { month: 'Sep 2024', sales: 2600 },
-    { month: 'Oct 2024', sales: 3800 },
-    { month: 'Nov 2024', sales: 3100 },
-    { month: 'Dec 2024', sales: 3500 },
-    { month: 'Jan 2025', sales: 2900 },
-    { month: 'Feb 2025', sales: 3600 },
-    { month: 'Mar 2025', sales: 3200 },
-    { month: 'Apr 2025', sales: 3400 },
-    { month: 'May 2025', sales: 1200 },
-  ],
-  weeklySales: [
-    { week: 'Week 1', sales: 800 },
-    { week: 'Week 2', sales: 950 },
-    { week: 'Week 3', sales: 750 },
-    { week: 'Week 4', sales: 1100 },
-  ],
-  dailySales: [
-    { day: 'Mon', sales: 320 },
-    { day: 'Tue', sales: 280 },
-    { day: 'Wed', sales: 450 },
-    { day: 'Thu', sales: 380 },
-    { day: 'Fri', sales: 290 },
-    { day: 'Sat', sales: 150 },
-    { day: 'Sun', sales: 90 },
-  ],
-  bookingStats: [
-    { name: 'Completed', value: 85, color: '#10B981' },
-    { name: 'Pending', value: 12, color: '#F59E0B' },
-    { name: 'Cancelled', value: 3, color: '#EF4444' },
-  ],
-  clientTypeData: [
-    { name: 'Corporate', value: 60 },
-    { name: 'Leisure', value: 35 },
-    { name: 'Group', value: 5 },
-  ],
-  performanceMetrics: [
-    { month: 'Jan', bookings: 15, revenue: 2900, target: 3000 },
-    { month: 'Feb', bookings: 18, revenue: 3600, target: 3200 },
-    { month: 'Mar', bookings: 16, revenue: 3200, target: 3100 },
-    { month: 'Apr', bookings: 17, revenue: 3400, target: 3300 },
-    { month: 'May', bookings: 6, revenue: 1200, target: 3500 },
-  ]
-};
 
 // Card color configurations
 const cardColors = [
-  { bg: 'bg-gradient-to-br from-blue-500 to-blue-600', text: 'text-white' },
-  { bg: 'bg-gradient-to-br from-purple-500 to-purple-600', text: 'text-white' },
-  { bg: 'bg-gradient-to-br from-green-500 to-green-600', text: 'text-white' },
-  { bg: 'bg-gradient-to-br from-amber-500 to-amber-600', text: 'text-white' },
+  { bg: 'bg-gradient-to-br from-blue-600 to-blue-400', text: 'text-white' },
+  { bg: 'bg-gradient-to-br from-purple-600 to-purple-400', text: 'text-white' },
+  { bg: 'bg-gradient-to-br from-green-500 to-green-400', text: 'text-white' },
+  { bg: 'bg-gradient-to-br from-amber-500 to-amber-400', text: 'text-white' },
 ];
 
 // Pie chart colors
@@ -167,38 +91,10 @@ const Overview: React.FC = () => {
   const [ticketRequests, setTicketRequests] = useState<TicketRequest[]>([]);
 
 
-  // New state for call descriptions
-  const [callDescriptions, setCallDescriptions] = useState<CallDescription[]>([]);
-  const [callDescriptionsLoading, setCallDescriptionsLoading] = useState<boolean>(false);
-
   const isAdmin = user?.role === 'admin';
   const isTravelConsultant = user?.role === 'travel';
   const isTicketConsultant = user?.role === 'ticket';
 
-
-   useEffect(() => {
-    const fetchCallDescriptions = async (): Promise<void> => {
-      // Only fetch for admin and ticket roles
-      if (!isAdmin && !isTicketConsultant) return;
-      
-      try {
-        setCallDescriptionsLoading(true);
-        const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/call-descriptions`, {
-          withCredentials: true
-        });
-
-        if (response.data.success) {
-          setCallDescriptions(response.data.data);
-        }
-      } catch (err) {
-        console.error('Error fetching call descriptions:', err);
-      } finally {
-        setCallDescriptionsLoading(false);
-      }
-    };
-
-    fetchCallDescriptions();
-  }, [isAdmin, isTicketConsultant]);
 
   // Fetch sales data from API
   useEffect(() => {
@@ -211,9 +107,8 @@ const Overview: React.FC = () => {
         if (response.data.success) {
           const data = response.data.data;
 
-          // Get current year and month
           const currentYear = dayjs().year();
-          const currentMonth = dayjs().month(); // 0-indexed: January = 0
+          const currentMonth = dayjs().month();
 
           // Filter data for current month only
           const filteredData = data.filter((item: { createdAt: string | number | dayjs.Dayjs | Date | null | undefined; }) => {
@@ -255,14 +150,18 @@ const Overview: React.FC = () => {
     // Filter only "Charge" status entries
     const chargedSales = salesData.filter(item => item.status === 'Charge');
 
-    // Calculate totals
+    // Calculate totals - use USD converted amounts
     const totalSales = chargedSales.reduce((sum, item) => {
-      const saleAmount = calculateSale(item.ticketRequest?.mco);
+      // Use saleAmountUSD if available (from backend), otherwise calculate
+      const saleAmount = item.saleAmountUSD || calculateSale(item.ticketRequest?.mco);
       return sum + saleAmount;
     }, 0);
 
     const totalMCO = chargedSales.reduce((sum, item) => {
-      const mcoAmount = parseFloat(item.ticketRequest?.mco || '0') || 0;
+      // Use mcoUSD if available, otherwise use original mco
+      const mcoAmount = item.ticketRequest?.mcoUSD 
+        ? parseFloat(item.ticketRequest.mcoUSD) 
+        : parseFloat(item.ticketRequest?.mco || '0') || 0;
       return sum + mcoAmount;
     }, 0);
 
@@ -300,12 +199,13 @@ const Overview: React.FC = () => {
       value: Math.round((count / chargedSales.length) * 100)
     }));
 
-    // Generate monthly sales data based on createdAt dates
+    // Generate monthly sales data based on createdAt dates - use USD amounts
     const monthlySales: Record<string, number> = {};
     chargedSales.forEach(item => {
       const date = new Date(item.createdAt);
       const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      const saleAmount = calculateSale(item.ticketRequest?.mco);
+      // Use saleAmountUSD if available (from backend), otherwise calculate
+      const saleAmount = item.saleAmountUSD || calculateSale(item.ticketRequest?.mco);
       monthlySales[monthKey] = (monthlySales[monthKey] || 0) + saleAmount;
     });
 
@@ -326,182 +226,6 @@ const Overview: React.FC = () => {
   };
 
   const metrics = processedData();
-
-// Add this function to your Overview component
-const downloadCallDescriptionsExcel = () => {
-  const headers = [
-    "S.No",
-    "Source Number", 
-    "Destination",
-    "Duration",
-    "Status",
-    "Conversation",
-    "Call Date",
-    "Created At"
-  ];
-
-  const csvContent = [
-    headers.join(","),
-    ...callDescriptions.map((call, index) =>
-      [
-        index + 1,
-        `"${call.sourceNumber}"`,
-        `"${call.destination}"`,
-        `"${call.callDuration}"`,
-        `"${call.status}"`,
-        `"${call.callConversation.replace(/"/g, '""')}"`, // Escape quotes in conversation
-        `"${call.date}"`,
-          `"${call.user}"`,
-        `"${format(new Date(call.createdAt), "MMM dd, yyyy 'at' hh:mm a")}"`,
-      ].join(",")
-    ),
-  ].join("\n");
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
-  link.setAttribute(
-    "download",
-    `call-descriptions-${new Date().toISOString().split("T")[0]}.csv`
-  );
-  link.click();
-  URL.revokeObjectURL(url);
-};
-
-// Updated CallDescriptionsSection component
-const CallDescriptionsSection: React.FC = () => {
-  const formatDate = (dateString: string): string => {
-    try {
-      const options: Intl.DateTimeFormatOptions = {
-        timeZone: 'America/New_York',
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      };
-      const formatter = new Intl.DateTimeFormat('en-US', options);
-      return formatter.format(new Date(dateString));
-    } catch {
-      return dateString;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {    
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium 'bg-gray-100 text-gray-800'`}>
-        {status}
-      </span>
-    );
-  };
-
-  if (callDescriptionsLoading) {
-    return (
-      <Card className="col-span-full">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Call Descriptions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-32">
-            <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
-            <span className="ml-2 text-gray-600">Loading call descriptions...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
- return (
-  <Card className="col-span-full">
-    <CardHeader className="flex flex-row items-center justify-between">
-      <CardTitle className="text-2xl font-bold">Call Descriptions</CardTitle>
-      <button
-        onClick={downloadCallDescriptionsExcel}
-        disabled={callDescriptions.length === 0}
-        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-        title="Download as Excel/CSV"
-      >
-        <FileSpreadsheet className="h-4 w-4" />
-        <span className="hidden sm:inline">Excel</span>
-      </button>
-    </CardHeader>
-    <CardContent>
-      {callDescriptions.length === 0 ? (
-        <div className="text-center p-8 text-gray-500">
-          No call descriptions found.
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full table-fixed"> {/* Added table-fixed for consistent column widths */}
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left p-3 font-semibold text-gray-700 w-32">Source Number</th>
-                <th className="text-left p-3 font-semibold text-gray-700 w-32">Destination</th>
-                <th className="text-left p-3 font-semibold text-gray-700 w-20">Duration</th>
-                <th className="text-left p-3 font-semibold text-gray-700 w-24">Status</th>
-                <th className="text-left p-3 font-semibold text-gray-700 w-32">Conversation</th> {/* Fixed width */}
-                                <th className="text-left p-3 font-semibold text-gray-700 w-24">Agent</th> {/* Fixed width */}
-
-                <th className="text-left p-3 font-semibold text-gray-700 w-28">Call Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {callDescriptions.map((call) => (
-                <tr key={call._id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="p-3">
-                    <span className="font-mono text-sm bg-blue-50 px-2 py-1 rounded">
-                      {call.sourceNumber}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <span className="font-mono text-sm bg-purple-50 px-2 py-1 rounded">
-                      {call.destination}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <span className="font-medium text-gray-900">{call.callDuration}</span>
-                  </td>
-                  <td className="p-3">
-                    {getStatusBadge(call.status)}
-                  </td>
-                  <td className="p-3 relative group"> {/* Added relative and group for tooltip */}
-                    <div className="w-full">
-                      <p className="text-sm text-gray-900 truncate cursor-help">
-                        {call.callConversation}
-                      </p>
-                      {/* Tooltip */}
-                      {call.callConversation.length > 60 && (
-                        <div className="absolute left-0 top-full mt-2 w-80 p-3 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 max-h-40 overflow-y-auto">
-                          <div className="break-words">
-                            {call.callConversation}
-                          </div>
-                          {/* Arrow pointing up */}
-                          <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-800 rotate-45"></div>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                   <td className="p-3">
-                    <span className="text-sm text-gray-700">{call.user || " - "}</span>
-                  </td>
-                  <td className="p-3">
-                    <span className="text-sm text-gray-700">{call.date}</span>
-                  </td>
-                 
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </CardContent>
-  </Card>
-);
-};
-
-
  
   // Generate chart data based on timeframe
   const getChartData = (): ChartConfig => {
@@ -509,7 +233,7 @@ const CallDescriptionsSection: React.FC = () => {
 
     switch (timeFrame) {
       case 'daily':
-        // Generate last 7 days data
+        // Generate last 7 days data - use USD amounts
         const dailyData: ChartData[] = [];
         for (let i = 6; i >= 0; i--) {
           const date = new Date();
@@ -519,14 +243,18 @@ const CallDescriptionsSection: React.FC = () => {
 
           const daySales = metrics.chargedSales
             .filter(item => item.createdAt.split('T')[0] === dayKey)
-            .reduce((sum, item) => sum + calculateSale(item.ticketRequest?.mco), 0);
+            .reduce((sum, item) => {
+              // Use saleAmountUSD if available, otherwise calculate
+              const saleAmount = item.saleAmountUSD || calculateSale(item.ticketRequest?.mco);
+              return sum + saleAmount;
+            }, 0);
 
           dailyData.push({ day: dayName, sales: Math.round(daySales) });
         }
         return { data: dailyData, dataKey: 'day', fill: '#8884d8' };
 
       case 'weekly':
-        // Generate last 4 weeks data
+        // Generate last 4 weeks data - use USD amounts
         const weeklyData: ChartData[] = [];
         for (let i = 3; i >= 0; i--) {
           const weekStart = new Date();
@@ -539,7 +267,11 @@ const CallDescriptionsSection: React.FC = () => {
               const itemDate = new Date(item.createdAt);
               return itemDate >= weekStart && itemDate <= weekEnd;
             })
-            .reduce((sum, item) => sum + calculateSale(item.ticketRequest?.mco), 0);
+            .reduce((sum, item) => {
+              // Use saleAmountUSD if available, otherwise calculate
+              const saleAmount = item.saleAmountUSD || calculateSale(item.ticketRequest?.mco);
+              return sum + saleAmount;
+            }, 0);
 
           weeklyData.push({ week: `Week ${4 - i}`, sales: Math.round(weekSales) });
         }
@@ -555,45 +287,13 @@ const CallDescriptionsSection: React.FC = () => {
 
   // Recent Sales Component
   const RecentSales: React.FC = () => {
-    if (!salesData || salesData.length === 0) {
-      return (
-        <Card className="col-span-full">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Recent Sales Data</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center h-32">
-              <div role="status" className="inline-flex items-center justify-center">
-                <svg
-                  aria-hidden="true"
-                  className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
-                  viewBox="0 0 100 101"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                    fill="currentFill"
-                  />
-                </svg>
-                <span className="sr-only">Loading...</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    const recentSales = salesData.slice(0, 5); // Show only 5 rows
+  
+    const recentSales = salesData.slice(0, 5);
 
     const formatDate = (dateString: string): string => {
       try {
         const options: Intl.DateTimeFormatOptions = {
-          timeZone: 'America/New_York', // New York timezone (EST/EDT)
+          timeZone: 'America/New_York',
           year: 'numeric',
           month: 'short',
           day: '2-digit',
@@ -608,7 +308,6 @@ const CallDescriptionsSection: React.FC = () => {
         return dateString;
       }
     };
-
 
     return (
       <Card className="col-span-full">
@@ -632,7 +331,12 @@ const CallDescriptionsSection: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {recentSales.map((item) => (
+                {recentSales.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="text-center text-lg p-6 text-gray-500">No! Sales Right Now</td>
+                  </tr>
+                ) : (
+                  recentSales.map((item) => (
                   <tr key={item._id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="p-3">
                       <div>
@@ -661,12 +365,26 @@ const CallDescriptionsSection: React.FC = () => {
                     <td className="p-3">
                       <div>
                         {item.status === 'Charge' && (
-                          <div className="font-medium text-green-600">
-                            ${calculateSale(item.ticketRequest?.mco).toFixed(2)}
-                          </div>
+                          <>
+                            {item.currency && item.currency !== 'USD' ? (
+                              <div>
+                                <div className="font-medium text-green-600">
+                                  Sale: ${(item.saleAmountUSD || calculateSale(item.ticketRequest?.mco)).toFixed(2)} USD
+                                </div>
+                                <div className="text-xs text-gray-400">
+                                  (≈ {item.currency} {item.saleAmountOriginal?.toFixed(2)})
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="font-medium text-green-600">
+                                Sale: ${(item.saleAmountUSD || calculateSale(item.ticketRequest?.mco)).toFixed(2)}
+                              </div>
+                            )}
+                          </>
                         )}
                         <div className="text-sm text-gray-500">
-                          MCO: ${item.ticketRequest?.mco || '0.00'}
+                          MCO: ${parseFloat(item.ticketRequest?.mcoUSD || item.ticketRequest?.mco || '0').toFixed(2)}
+                          {item.currency && item.currency !== 'USD' && ` (${item.currency})`}
                         </div>
                       </div>
                     </td>
@@ -688,7 +406,8 @@ const CallDescriptionsSection: React.FC = () => {
                       </span>
                     </td>
                   </tr>
-                ))}
+                ))
+                )} 
               </tbody>
             </table>
           </div>
@@ -760,6 +479,7 @@ const CallDescriptionsSection: React.FC = () => {
     const getEmptyChartData = (): ChartConfig => {
       switch (timeFrame) {
         case 'daily':
+          // eslint-disable-next-line no-case-declarations
           const emptyDailyData: ChartData[] = [];
           for (let i = 6; i >= 0; i--) {
             const date = new Date();
@@ -770,6 +490,7 @@ const CallDescriptionsSection: React.FC = () => {
           return { data: emptyDailyData, dataKey: 'day', fill: '#8884d8' };
 
         case 'weekly':
+          // eslint-disable-next-line no-case-declarations
           const emptyWeeklyData: ChartData[] = [];
           for (let i = 3; i >= 0; i--) {
             emptyWeeklyData.push({ week: `Week ${4 - i}`, sales: 0 });
@@ -778,6 +499,7 @@ const CallDescriptionsSection: React.FC = () => {
 
         case 'monthly':
         default:
+          // eslint-disable-next-line no-case-declarations
           const emptyMonthlyData: ChartData[] = [];
           for (let i = 11; i >= 0; i--) {
             const date = new Date();
@@ -796,12 +518,12 @@ const CallDescriptionsSection: React.FC = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              title: "Final MCO",
+              title: "Final MCO (USD)",
               value: `$${displayMetrics.totalSales.toFixed(2)}`,
               colorIndex: 0
             },
             {
-              title: "Total MCO",
+              title: "Total MCO (USD)",
               value: `$${displayMetrics.totalMCO.toFixed(2)}`,
               colorIndex: 1
             },
@@ -811,7 +533,7 @@ const CallDescriptionsSection: React.FC = () => {
               colorIndex: 2
             },
             {
-              title: "Average Per Day",
+              title: "Average Per Day (USD)",
               value: `$${displayMetrics.averageTicketCost.toFixed(2)}`,
               colorIndex: 3
             }
@@ -829,9 +551,6 @@ const CallDescriptionsSection: React.FC = () => {
         </div>
 
         <RecentSales />
-
-                <CallDescriptionsSection />
-
 
         {/* Charts */}
         <div className="grid gap-6 md:grid-cols-2">
@@ -960,7 +679,7 @@ const CallDescriptionsSection: React.FC = () => {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={travelConsultantData.performanceMetrics}>
+                  <LineChart >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis tickFormatter={(value) => `$${value}`} />
@@ -981,10 +700,9 @@ const CallDescriptionsSection: React.FC = () => {
 
   // Travel Consultant Dashboard
   if (isTravelConsultant) {
-    const totalRevenue = myPersonalSales.filter(sale => sale.status === 'Confirmed').reduce((sum, sale) => sum + sale.amount, 0);
-    const totalBookings = myPersonalSales.length;
-    const confirmedBookings = myPersonalSales.filter(sale => sale.status === 'Confirmed').length;
-    const pendingBookings = myPersonalSales.filter(sale => sale.status === 'Pending').length;
+    const totalRevenue = "NaN";
+    const confirmedBookings = "NaN";
+    const pendingBookings = "NaN";
 
     return (
       <div className="space-y-6">
@@ -1125,7 +843,7 @@ const CallDescriptionsSection: React.FC = () => {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={travelConsultantData.performanceMetrics}>
+                  <LineChart>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis tickFormatter={(value) => `$${value}`} />
@@ -1189,7 +907,6 @@ const CallDescriptionsSection: React.FC = () => {
 
     const roundedTotalMCO = Math.round(totalMCO * 100) / 100;
     const totalSales = totalMCO * 0.85;
-    const totalBookings = mySales.length;
 
     const formatCurrency = (amount: string) => {
       const num = parseFloat(amount);
@@ -1197,14 +914,6 @@ const CallDescriptionsSection: React.FC = () => {
         style: 'currency',
         currency: 'USD'
       });
-    };
-
-    const formatDate = (dateString: string) => {
-      try {
-        return format(new Date(dateString), "MMM dd, yyyy 'at' hh:mm a");
-      } catch {
-        return dateString;
-      }
     };
 
     return (

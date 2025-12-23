@@ -6,49 +6,24 @@ import { format } from "date-fns";
 import axios from "axios";
 import { useAuth } from '@/contexts/use-auth';
 import { useToast } from '../components/ui/use-toast';
+import { formatCurrency as formatCurrencyUtil } from '@/lib/currencyUtils';
+import type { TicketRequest } from '@/types/ticketRequest';
 
 
 
 
-interface TicketRequest {
-  _id: string;
-  passengerName: string;
-  passengerEmail: string;
-  phoneNumber: string;
-  confirmationCode: string;
-  ticketCost: string;
-  status: string;
-  mco: string;
-  paymentMethod?: string;
-  cardholderName?: string;
-  cardNumber?: string;
-  expiryDate?: string;
-  cvv?: string;
-  date?: string;
-  time?: string;
-  datetime?: string;
-  consultant?: string;
-  ticketType?: string;
-  requestFor?: string;
-  billingZipCode: string;
-  billingCountry: string;
-  billingState: string;
-  billingCity: string;
-  billingAddress: string;
-  Desc?: string;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
+interface TicketRequestLocal extends TicketRequest {
+  // Add any local-specific fields if needed
 }
 
 export default function Submission() {
   const { user } = useAuth(); // Get user from auth context
-  const [ticketRequests, setTicketRequests] = useState<TicketRequest[]>([]);
+  const [ticketRequests, setTicketRequests] = useState<TicketRequestLocal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredRequests, setFilteredRequests] = useState<TicketRequest[]>([]);
-  const [selectedRequest, setSelectedRequest] = useState<TicketRequest | null>(null);
+  const [filteredRequests, setFilteredRequests] = useState<TicketRequestLocal[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<TicketRequestLocal | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -72,7 +47,7 @@ export default function Submission() {
 
       // Filter tickets based on user email
 
-      const userTickets = response.data.filter((ticket: TicketRequest) => {
+      const userTickets = response.data.filter((ticket: TicketRequestLocal) => {
         if (user.role === 'admin') {
           return true;
         }
@@ -87,7 +62,7 @@ export default function Submission() {
       console.log("Filtered tickets for user:", userTickets);
 
       // Further filter tickets with status === 'Pending'
-      const pendingTickets = userTickets.filter((ticket: TicketRequest) => ticket.status === "Pending");
+      const pendingTickets = userTickets.filter((ticket: TicketRequestLocal) => ticket.status === "Pending");
 
 
       setTicketRequests(pendingTickets); // all user tickets
@@ -138,29 +113,34 @@ export default function Submission() {
     return cardNumber.replace(/(.{4})/g, "$1 ").trim();
   };
 
-  // Format currency
-  const formatCurrency = (amount: string) => {
-    const num = parseFloat(amount);
-    return isNaN(num) ? amount : num.toLocaleString('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    });
+  // Format currency with proper currency support
+  const formatCurrency = (amount: string, currency?: string) => {
+    if (!currency || currency === 'USD') {
+      // Default USD formatting
+      const num = parseFloat(amount);
+      return isNaN(num) ? amount : num.toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      });
+    }
+    // Use multi-currency utility
+    return formatCurrencyUtil(parseFloat(amount), currency);
   };
 
   // Handle view details
-  const handleViewDetails = (request: TicketRequest) => {
+  const handleViewDetails = (request: TicketRequestLocal) => {
     setSelectedRequest(request);
     setIsEditMode(false);
     setIsModalOpen(true);
   };
 
-  const handleEdit = (request: TicketRequest) => {
+  const handleEdit = (request: TicketRequestLocal) => {
     setSelectedRequest(request);
     setIsEditMode(true);
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (request: TicketRequest) => {
+  const handleDelete = async (request: TicketRequestLocal) => {
     try {
       if (!window.confirm("Are you sure you want to delete this request?")) return;
 
@@ -190,7 +170,7 @@ export default function Submission() {
     }
   };
 
-  const handleDuplicate = async (request: TicketRequest) => {
+  const handleDuplicate = async (request: TicketRequestLocal) => {
     try {
       // Remove fields that should not be copied (id, timestamps, etc.)
       const { _id, createdAt, updatedAt, __v, ...copyData } = request;
@@ -415,10 +395,20 @@ export default function Submission() {
                       </td>
                       <td className="p-3">
                         <div className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                          Ticket Cost : {formatCurrency(request.ticketCost)}
+                          Ticket Cost: {formatCurrency(request.ticketCost, request.currency)}
+                          {request.currency && request.currency !== 'USD' && request.ticketCostUSD && (
+                            <span className="text-xs text-gray-600 ml-1">
+                              (≈ {formatCurrency(request.ticketCostUSD, 'USD')})
+                            </span>
+                          )}
                         </div>
-                        <div className="text-sm text-gray-500 px-2 py-1 ">
-                          MCO : {formatCurrency(request.mco)}
+                        <div className="text-sm text-gray-500 px-2 py-1">
+                          MCO: {formatCurrency(request.mco, request.currency)}
+                          {request.currency && request.currency !== 'USD' && request.mcoUSD && (
+                            <span className="text-xs text-gray-600 ml-1">
+                              (≈ {formatCurrency(request.mcoUSD, 'USD')})
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="p-3">
@@ -649,9 +639,16 @@ export default function Submission() {
                             onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, ticketCost: e.target.value })}
                           />
                         ) : (
-                          <p className="text-xl font-bold text-purple-600 bg-white/60 px-3 py-2 rounded-lg">
-                            {formatCurrency(selectedRequest.ticketCost || '0')}
-                          </p>
+                          <div>
+                            <p className="text-xl font-bold text-purple-600 bg-white/60 px-3 py-2 rounded-lg">
+                              {formatCurrency(selectedRequest.ticketCost || '0', selectedRequest.currency)}
+                            </p>
+                            {selectedRequest.currency && selectedRequest.currency !== 'USD' && selectedRequest.ticketCostUSD && (
+                              <p className="text-sm text-gray-500 mt-1 px-3">
+                                ≈ {formatCurrency(selectedRequest.ticketCostUSD, 'USD')}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                       <div>
@@ -665,10 +662,16 @@ export default function Submission() {
                             onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, mco: e.target.value })}
                           />
                         ) : (
-                          <p className="text-xl font-bold text-blue-600 bg-white/60 px-3 py-2 rounded-lg">
-                            {formatCurrency(selectedRequest.mco || '0')}
-                          </p>
-
+                          <div>
+                            <p className="text-xl font-bold text-blue-600 bg-white/60 px-3 py-2 rounded-lg">
+                              {formatCurrency(selectedRequest.mco || '0', selectedRequest.currency)}
+                            </p>
+                            {selectedRequest.currency && selectedRequest.currency !== 'USD' && selectedRequest.mcoUSD && (
+                              <p className="text-sm text-gray-500 mt-1 px-3">
+                                ≈ {formatCurrency(selectedRequest.mcoUSD, 'USD')}
+                              </p>
+                            )}
+                          </div>
                         )}
 
                       </div>

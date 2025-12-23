@@ -9,39 +9,13 @@ import { toast } from "../components/ui/use-toast";
 import PaymentForm from "@/components/forms/PaymentForm";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import { formatCurrency as formatCurrencyUtil } from '@/lib/currencyUtils';
+import type { TicketRequest } from '@/types/ticketRequest';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-interface TicketRequest {
-  _id: string;
-  passengerName: string;
-  passengerEmail: string;
-  phoneNumber: string;
-  airlineCode: string;
-  confirmationCode: string;
-  ticketCost: string;
-  status: string;
-  mco: string;
-  paymentMethod?: string;
-  cardholderName?: string;
-  cardNumber?: string;
-  expiryDate?: string;
-  cvv?: string;
-  date: string;
-  time?: string;
-  datetime?: string;
-  consultant?: string;
-  ticketType?: string;
-  requestFor?: string;
-  Desc?: string;
-  billingZipCode: string;
-  billingCountry: string;
-  billingState: string;
-  billingCity: string;
-  billingAddress: string;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
+interface TicketRequestLocal extends TicketRequest {
+  // Add any local-specific fields if needed
 }
 
 interface BackendErrorResponse {
@@ -53,12 +27,12 @@ interface BackendErrorResponse {
 
 export default function Submission() {
   const { user } = useAuth();
-  const [ticketRequests, setTicketRequests] = useState<TicketRequest[]>([]);
+  const [ticketRequests, setTicketRequests] = useState<TicketRequestLocal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredRequests, setFilteredRequests] = useState<TicketRequest[]>([]);
-  const [selectedRequest, setSelectedRequest] = useState<TicketRequest | null>(
+  const [filteredRequests, setFilteredRequests] = useState<TicketRequestLocal[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<TicketRequestLocal | null>(
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -89,7 +63,7 @@ export default function Submission() {
       );
 
       // Filter tickets based on user email and status
-      const userTickets = response.data.filter((ticket: TicketRequest) => {
+      const userTickets = response.data.filter((ticket: TicketRequestLocal) => {
         // First filter by user access
         let hasAccess = user.role === "ticket" || user.role === "admin";
 
@@ -162,19 +136,22 @@ export default function Submission() {
     return cardNumber.replace(/(.{4})/g, "$1 ").trim();
   };
 
-  // Format currency
-  const formatCurrency = (amount: string) => {
-    const num = parseFloat(amount);
-    return isNaN(num)
-      ? amount
-      : num.toLocaleString("en-US", {
-          style: "currency",
-          currency: "USD",
-        });
+  // Format currency with proper currency support
+  const formatCurrency = (amount: string, currency?: string) => {
+    if (!currency || currency === 'USD') {
+      // Default USD formatting
+      const num = parseFloat(amount);
+      return isNaN(num) ? amount : num.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+      });
+    }
+    // Use multi-currency utility
+    return formatCurrencyUtil(parseFloat(amount), currency);
   };
 
   // Handle view details
-  const handleViewDetails = (request: TicketRequest) => {
+  const handleViewDetails = (request: TicketRequestLocal) => {
     setSelectedRequest(request);
     setIsModalOpen(true);
   };
@@ -533,10 +510,20 @@ export default function Submission() {
                       </td>
                       <td className="p-3">
                         <div className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                          Ticket Cost : {formatCurrency(request.ticketCost)}
+                          Ticket Cost: {formatCurrency(request.ticketCost, request.currency)}
+                          {request.currency && request.currency !== 'USD' && request.ticketCostUSD && (
+                            <span className="text-xs text-gray-600 ml-1">
+                              (≈ {formatCurrency(request.ticketCostUSD, 'USD')})
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm text-gray-500 px-2 py-1">
-                          MCO : {formatCurrency(request.mco)}
+                          MCO: {formatCurrency(request.mco, request.currency)}
+                          {request.currency && request.currency !== 'USD' && request.mcoUSD && (
+                            <span className="text-xs text-gray-600 ml-1">
+                              (≈ {formatCurrency(request.mcoUSD, 'USD')})
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="p-3">
@@ -725,9 +712,16 @@ export default function Submission() {
                             <label className="block text-sm font-medium text-gray-600 mb-2">
                               Ticket Cost
                             </label>
-                            <p className="text-2xl font-bold text-green-600 bg-white/60 px-3 py-2 rounded-lg">
-                              {formatCurrency(selectedRequest.ticketCost)}
-                            </p>
+                            <div>
+                              <p className="text-2xl font-bold text-green-600 bg-white/60 px-3 py-2 rounded-lg">
+                                {formatCurrency(selectedRequest.ticketCost, selectedRequest.currency)}
+                              </p>
+                              {selectedRequest.currency && selectedRequest.currency !== 'USD' && selectedRequest.ticketCostUSD && (
+                                <p className="text-sm text-gray-500 mt-1 px-3">
+                                  ≈ {formatCurrency(selectedRequest.ticketCostUSD, 'USD')}
+                                </p>
+                              )}
+                            </div>
                           </div>
 
                           {selectedRequest.mco && (
@@ -735,9 +729,16 @@ export default function Submission() {
                               <label className="block text-sm font-medium text-gray-600 mb-2">
                                 MCO
                               </label>
-                              <p className="text-xl font-semibold text-purple-600 bg-white/60 px-3 py-2 rounded-lg">
-                                {formatCurrency(selectedRequest.mco)}
-                              </p>
+                              <div>
+                                <p className="text-xl font-semibold text-purple-600 bg-white/60 px-3 py-2 rounded-lg">
+                                  {formatCurrency(selectedRequest.mco, selectedRequest.currency)}
+                                </p>
+                                {selectedRequest.currency && selectedRequest.currency !== 'USD' && selectedRequest.mcoUSD && (
+                                  <p className="text-sm text-gray-500 mt-1 px-3">
+                                    ≈ {formatCurrency(selectedRequest.mcoUSD, 'USD')}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>

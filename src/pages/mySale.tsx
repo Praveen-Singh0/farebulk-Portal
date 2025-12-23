@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "@/contexts/use-auth";
+import { formatCurrency as formatCurrencyUtil, CURRENCY_SYMBOLS } from "@/lib/currencyUtils";
 
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -37,6 +38,10 @@ interface TicketRequestStatus {
     billingAddress: string;
     Desc?: string;
     createdAt: string;
+    currency?: string;
+    exchangeRate?: number;
+    ticketCostUSD?: string;
+    mcoUSD?: string;
   };
   status: string;
   paymentMethod?: string;
@@ -44,6 +49,10 @@ interface TicketRequestStatus {
   updatedBy: string;
   createdAt: string;
   updatedAt: string;
+  currency?: string;
+  saleAmountOriginal?: number;
+  saleAmountUSD?: number;
+  exchangeRate?: number;
 }
 
 export default function MySale() {
@@ -258,7 +267,7 @@ export default function MySale() {
     }
   };
 
-  // Calculate totals based on sale amounts
+  // Calculate totals based on sale amounts - use USD converted amounts
   const totalChargeTransactions = filteredStatuses.filter(
     (status) => status.status.toLowerCase() === "charge"
   ).length;
@@ -266,7 +275,8 @@ export default function MySale() {
   const chargedSales = filteredStatuses
     .filter((status) => status.status.toLowerCase() === "charge")
     .reduce((sum, status) => {
-      const saleAmount = calculateSale(status.ticketRequest?.mco);
+      // Use saleAmountUSD if available (from backend), otherwise calculate
+      const saleAmount = status.saleAmountUSD || calculateSale(status.ticketRequest?.mco);
       return sum + saleAmount;
     }, 0);
 
@@ -483,13 +493,29 @@ export default function MySale() {
                         </td>
                         <td className="p-3">
                           {status.status === "Charge" && (
-                            <div className="font-medium text-green-600">
-                              {formatCurrency(saleAmount)}
-                            </div>
+                            <>
+                              {status.currency && status.currency !== 'USD' ? (
+                                <div>
+                                  <div className="font-medium text-green-600">
+                                    {formatCurrencyUtil(status.saleAmountOriginal || saleAmount, status.currency)}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    ≈ {formatCurrency(status.saleAmountUSD || saleAmount)}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="font-medium text-green-600">
+                                  {formatCurrency(saleAmount)}
+                                </div>
+                              )}
+                            </>
                           )}
                           {ticket?.mco && (
                             <div className="text-sm text-gray-500">
-                              MCO: {formatCurrency(parseFloat(ticket.mco))}
+                              MCO: {ticket.currency && ticket.currency !== 'USD' 
+                                ? `${formatCurrencyUtil(parseFloat(ticket.mco), ticket.currency)} (${formatCurrency(parseFloat(ticket.mcoUSD || ticket.mco))})`
+                                : formatCurrency(parseFloat(ticket.mco))
+                              }
                             </div>
                           )}
                         </td>
@@ -713,48 +739,119 @@ export default function MySale() {
                       </h4>
                     </div>
                     <div className="space-y-4">
+                      {selectedStatus.currency && selectedStatus.currency !== 'USD' && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-blue-900">Currency</span>
+                            <span className="text-lg font-bold text-blue-700">
+                              {CURRENCY_SYMBOLS[selectedStatus.currency] || selectedStatus.currency} {selectedStatus.currency}
+                            </span>
+                          </div>
+                          <div className="text-xs text-blue-600 mt-1">
+                            Exchange Rate: 1 {selectedStatus.currency} = ${(1 / (selectedStatus.exchangeRate || 1)).toFixed(4)} USD
+                          </div>
+                        </div>
+                      )}
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">
                           Ticket Cost
                         </label>
-                        <p className="text-xl font-bold text-purple-600 bg-white/60 px-3 py-2 rounded-lg">
-                          {formatCurrency(
-                            parseFloat(
-                              selectedStatus.ticketRequest?.ticketCost || "0"
-                            )
-                          )}
-                        </p>
+                        {selectedStatus.ticketRequest.currency && selectedStatus.ticketRequest.currency !== 'USD' ? (
+                          <div>
+                            <p className="text-xl font-bold text-purple-600 bg-white/60 px-3 py-2 rounded-lg">
+                              {formatCurrencyUtil(
+                                parseFloat(selectedStatus.ticketRequest?.ticketCost || "0"),
+                                selectedStatus.ticketRequest.currency
+                              )}
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1 px-3">
+                              ≈ {formatCurrency(
+                                parseFloat(selectedStatus.ticketRequest?.ticketCostUSD || selectedStatus.ticketRequest?.ticketCost || "0")
+                              )}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xl font-bold text-purple-600 bg-white/60 px-3 py-2 rounded-lg">
+                            {formatCurrency(
+                              parseFloat(selectedStatus.ticketRequest?.ticketCost || "0")
+                            )}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">
                           MCO Amount
                         </label>
-                        <p className="text-xl font-bold text-blue-600 bg-white/60 px-3 py-2 rounded-lg">
-                          {formatCurrency(
-                            parseFloat(selectedStatus.ticketRequest?.mco || "0")
-                          )}
-                        </p>
+                        {selectedStatus.ticketRequest.currency && selectedStatus.ticketRequest.currency !== 'USD' ? (
+                          <div>
+                            <p className="text-xl font-bold text-blue-600 bg-white/60 px-3 py-2 rounded-lg">
+                              {formatCurrencyUtil(
+                                parseFloat(selectedStatus.ticketRequest?.mco || "0"),
+                                selectedStatus.ticketRequest.currency
+                              )}
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1 px-3">
+                              ≈ {formatCurrency(
+                                parseFloat(selectedStatus.ticketRequest?.mcoUSD || selectedStatus.ticketRequest?.mco || "0")
+                              )}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xl font-bold text-blue-600 bg-white/60 px-3 py-2 rounded-lg">
+                            {formatCurrency(
+                              parseFloat(selectedStatus.ticketRequest?.mco || "0")
+                            )}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">
                           Deduction (15% of MCO)
                         </label>
-                        <p className="text-lg font-semibold text-red-600 bg-white/60 px-3 py-2 rounded-lg">
-                          -
-                          {formatCurrency(
-                            calculateDeduction(
-                              selectedStatus.ticketRequest?.mco
-                            )
-                          )}
-                        </p>
+                        {selectedStatus.ticketRequest.currency && selectedStatus.ticketRequest.currency !== 'USD' ? (
+                          <div>
+                            <p className="text-lg font-semibold text-red-600 bg-white/60 px-3 py-2 rounded-lg">
+                              -{formatCurrencyUtil(
+                                calculateDeduction(selectedStatus.ticketRequest?.mco),
+                                selectedStatus.ticketRequest.currency
+                              )}
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1 px-3">
+                              ≈ -{formatCurrency(
+                                calculateDeduction(selectedStatus.ticketRequest?.mcoUSD || selectedStatus.ticketRequest?.mco)
+                              )}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-lg font-semibold text-red-600 bg-white/60 px-3 py-2 rounded-lg">
+                            -{formatCurrency(
+                              calculateDeduction(selectedStatus.ticketRequest?.mco)
+                            )}
+                          </p>
+                        )}
                       </div>
                       <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg p-3">
-                        <p className="text-white font-bold text-xl text-center">
-                          Final Sale:{" "}
-                          {formatCurrency(
-                            calculateSale(selectedStatus.ticketRequest?.mco)
-                          )}
-                        </p>
+                        {selectedStatus.currency && selectedStatus.currency !== 'USD' ? (
+                          <div>
+                            <p className="text-white font-bold text-xl text-center">
+                              Final Sale: {formatCurrencyUtil(
+                                selectedStatus.saleAmountOriginal || calculateSale(selectedStatus.ticketRequest?.mco),
+                                selectedStatus.currency
+                              )}
+                            </p>
+                            <p className="text-white/90 text-sm text-center mt-1">
+                              ≈ {formatCurrency(
+                                selectedStatus.saleAmountUSD || calculateSale(selectedStatus.ticketRequest?.mcoUSD || selectedStatus.ticketRequest?.mco)
+                              )}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-white font-bold text-xl text-center">
+                            Final Sale: {formatCurrency(
+                              calculateSale(selectedStatus.ticketRequest?.mco)
+                            )}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

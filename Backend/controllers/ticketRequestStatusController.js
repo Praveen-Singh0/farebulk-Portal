@@ -1,6 +1,7 @@
 const TicketRequestStatus = require('../models/TicketRequestStatus');
 const TicketRequest = require('../models/TicketRequest');
 const { User } = require('../models/User');
+const { convertCurrency } = require('../utils/currencyConverter');
 
 const createTicketRequestStatus = async (req, res) => {
   try {
@@ -34,13 +35,36 @@ const createTicketRequestStatus = async (req, res) => {
       });
     }
 
+    // Calculate sale amounts with currency support
+    let saleAmountOriginal = 0;
+    let saleAmountUSD = 0;
+    let currency = ticketRequest?.currency || 'USD';
+    let exchangeRate = ticketRequest?.exchangeRate || 1;
+
+    if (status === 'Charge' && ticketRequest?.mco) {
+      const mcoAmount = parseFloat(ticketRequest.mco) || 0;
+      // Calculate sale (MCO - 15% deduction)
+      saleAmountOriginal = mcoAmount - (mcoAmount * 0.15);
+      
+      // Convert to USD if not already in USD
+      if (currency !== 'USD') {
+        saleAmountUSD = convertCurrency(saleAmountOriginal, currency, 'USD');
+      } else {
+        saleAmountUSD = saleAmountOriginal;
+      }
+    }
+
     // Create new ticket request status
     const ticketRequestStatus = new TicketRequestStatus({
       ticketRequest,
       status,
       paymentMethod,
       remark,
-      updatedBy
+      updatedBy,
+      currency,
+      saleAmountOriginal,
+      saleAmountUSD,
+      exchangeRate
     });
 
     await ticketRequestStatus.save();

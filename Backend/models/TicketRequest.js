@@ -16,6 +16,12 @@ const ticketRequestSchema = new mongoose.Schema({
   requestFor: { type: String, required: true },
   Desc: { type: String, required: true },
   paymentIntentId: { type: String },
+  
+  // Multi-currency support
+  currency: { type: String, default: 'USD', enum: ['USD', 'INR', 'EUR', 'GBP', 'CAD', 'AUD'] },
+  exchangeRate: { type: Number, default: 1 }, // Rate at time of request
+  ticketCostUSD: { type: String }, // Converted to USD
+  mcoUSD: { type: String }, // Converted to USD
 
   // Consultant
   consultant: { type: String },

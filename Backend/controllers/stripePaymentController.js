@@ -2,6 +2,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const TicketRequest = require('../models/TicketRequest');
 const TicketRequestStatus = require('../models/TicketRequestStatus');
 const { User } = require('../models/User');
+const { convertCurrency } = require('../utils/currencyConverter');
 
 const createStripePaymentIntent = async (req, res) => {
     try {
@@ -49,9 +50,17 @@ const createStripePaymentIntent = async (req, res) => {
 
         console.log('Creating payment intent for user:', user.email);
 
+        // Convert amount to USD cents if needed (Stripe requires USD)
+        const currency = ticketRequest.currency || 'USD';
+        let amountInUSD = amount;
+        
+        if (currency !== 'USD') {
+            amountInUSD = convertCurrency(amount, currency, 'USD');
+        }
+
         // Create payment intent and confirm immediately
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(amount), 
+            amount: Math.round(amountInUSD * 100), // Convert to cents
             currency: 'usd',
             payment_method: paymentMethodId,
             confirmation_method: 'automatic',
@@ -61,7 +70,9 @@ const createStripePaymentIntent = async (req, res) => {
             metadata: {
                 ticketRequestId: ticketRequestId, 
                 userId: user._id.toString(),
-                userEmail: user.email
+                userEmail: user.email,
+                originalCurrency: currency,
+                originalAmount: amount.toString()
             }
         });
 
@@ -157,6 +168,17 @@ const updateTicketStatus = async (ticketRequest, status, user, paymentIntentId) 
         }
         await ticketRequest.save();
 
+        // Calculate sale amounts with currency support
+        const currency = ticketRequest.currency || 'USD';
+        const mcoAmount = parseFloat(ticketRequest.mco) || 0;
+        const saleAmountOriginal = mcoAmount - (mcoAmount * 0.15);
+        
+        let saleAmountUSD = saleAmountOriginal;
+        if (currency !== 'USD') {
+            const { convertCurrency } = require('../utils/currencyConverter');
+            saleAmountUSD = convertCurrency(saleAmountOriginal, currency, 'USD');
+        }
+
         // ✅ Create new TicketRequestStatus record (exactly like your pattern)
         const remark = status === 'Charge'
             ? `Payment successful via Stripe - Transaction ID: ${paymentIntentId}`
@@ -168,7 +190,11 @@ const updateTicketStatus = async (ticketRequest, status, user, paymentIntentId) 
             paymentMethod: 'Stripe',
             remark,
             updatedBy,
-            paymentIntentId // Add paymentIntentId to the status record too
+            paymentIntentId, // Add paymentIntentId to the status record too
+            currency,
+            saleAmountOriginal,
+            saleAmountUSD,
+            exchangeRate: ticketRequest.exchangeRate || 1
         });
 
         await ticketRequestStatus.save();

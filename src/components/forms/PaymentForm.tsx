@@ -13,6 +13,7 @@ interface TicketRequest {
   ticketCost: string;
   status: string;
   mco: string;
+  mcoUSD: string;
   paymentMethod?: string;
   cardholderName?: string;
   cardNumber?: string;
@@ -105,7 +106,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         `${import.meta.env.VITE_BASE_URL}/stripe/create-payment-intent`,
         {
           ticketRequestId: selectedRequest._id,
-          amount: Math.round(parseFloat(selectedRequest.mco) * 100), // Convert to cents
+          amount: Math.round(parseFloat(selectedRequest.mcoUSD) * 100), // Convert to cents
           paymentMethodId: paymentMethod.id,
           description: selectedRequest.Desc,
         },
@@ -129,7 +130,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       // Success
       toast({
         title: "Payment Successful",
-        description: `Payment of $${selectedRequest.mco} completed.`,
+        description: `Payment of $${selectedRequest.mcoUSD} completed.`,
         className: "bg-green-500 border border-green-200 text-white",
       });
 
@@ -171,7 +172,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-600">
-                Amount: ${selectedRequest?.mco}
+                Amount: ${selectedRequest?.mcoUSD}
               </p>
             </div>
 
@@ -265,7 +266,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           disabled={!stripe || isSubmitting}
           className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-50"
         >
-          {isSubmitting ? "Processing..." : `Pay $${selectedRequest?.mco}`}
+          {isSubmitting ? "Processing..." : `Pay $${selectedRequest?.mcoUSD}`}
         </button>
       </form>
     </div>

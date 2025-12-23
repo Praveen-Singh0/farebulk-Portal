@@ -1,9 +1,46 @@
 const TicketRequest = require('../models/TicketRequest');
+const { convertCurrency, getExchangeRate } = require('../utils/currencyConverter');
 
 // Create new ticket request
 const create = async (req, res) => {
   try {
-    const newRequest = new TicketRequest(req.body);
+    const requestData = req.body;
+    
+    // Handle currency conversion if currency is provided
+    if (requestData.currency && requestData.currency !== 'USD') {
+      const currency = requestData.currency;
+      const exchangeRate = getExchangeRate(currency, 'USD');
+      
+      // Convert ticket cost to USD
+      if (requestData.ticketCost) {
+        const ticketCostUSD = convertCurrency(
+          parseFloat(requestData.ticketCost),
+          currency,
+          'USD'
+        );
+        requestData.ticketCostUSD = ticketCostUSD.toString();
+      }
+      
+      // Convert MCO to USD
+      if (requestData.mco) {
+        const mcoUSD = convertCurrency(
+          parseFloat(requestData.mco),
+          currency,
+          'USD'
+        );
+        requestData.mcoUSD = mcoUSD.toString();
+      }
+      
+      requestData.exchangeRate = exchangeRate;
+    } else {
+      // If USD or no currency specified, set USD values same as original
+      requestData.currency = 'USD';
+      requestData.exchangeRate = 1;
+      requestData.ticketCostUSD = requestData.ticketCost;
+      requestData.mcoUSD = requestData.mco;
+    }
+    
+    const newRequest = new TicketRequest(requestData);
     const savedRequest = await newRequest.save();
     res.status(201).json(savedRequest);
   } catch (err) {
@@ -47,6 +84,38 @@ const update = async (req, res) => {
   try {
     const requestId = req.params.id;
     const updatedData = req.body;
+
+    // Handle currency conversion if currency changed
+    if (updatedData.currency && updatedData.currency !== 'USD') {
+      const currency = updatedData.currency;
+      const exchangeRate = getExchangeRate(currency, 'USD');
+      
+      // Convert ticket cost to USD
+      if (updatedData.ticketCost) {
+        const ticketCostUSD = convertCurrency(
+          parseFloat(updatedData.ticketCost),
+          currency,
+          'USD'
+        );
+        updatedData.ticketCostUSD = ticketCostUSD.toString();
+      }
+      
+      // Convert MCO to USD
+      if (updatedData.mco) {
+        const mcoUSD = convertCurrency(
+          parseFloat(updatedData.mco),
+          currency,
+          'USD'
+        );
+        updatedData.mcoUSD = mcoUSD.toString();
+      }
+      
+      updatedData.exchangeRate = exchangeRate;
+    } else if (updatedData.currency === 'USD') {
+      updatedData.exchangeRate = 1;
+      updatedData.ticketCostUSD = updatedData.ticketCost;
+      updatedData.mcoUSD = updatedData.mco;
+    }
 
     const updatedRequest = await TicketRequest.findByIdAndUpdate(
       requestId,
