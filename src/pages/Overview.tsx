@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/use-auth';
 import dayjs from 'dayjs';
 import axios from 'axios';
+import { formatCurrency as formatCurrencyUtil } from '@/lib/currencyUtils';
 
 
 interface TicketRequest {
@@ -25,7 +26,7 @@ interface TicketRequest {
   currency?: string;
   exchangeRate?: number;
   ticketCostUSD?: string;
-  mcoUSD?: string;
+  mcoUSD: string;
 }
 
 interface SalesDataItem {
@@ -1001,11 +1002,23 @@ const Overview: React.FC = () => {
                           <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{request.confirmationCode}</span>
                         </td>
                         <td className="p-3">
-                          <div className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                            Ticket Cost : {formatCurrency(request.ticketCost)}
-                          </div>
-                          <div className="text-sm text-gray-500 px-2 py-1">MCO : {formatCurrency(request.mco)}</div>
-                        </td>
+                        <div className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
+                          Ticket Cost: {formatCurrencyUtil(parseFloat(request.ticketCost), request.currency || 'USD')}
+                          {request.currency && request.currency !== 'USD' && request.ticketCostUSD && (
+                            <span className="text-xs text-gray-600 ml-1">
+                              (≈ {formatCurrencyUtil(parseFloat(request.ticketCostUSD), 'USD')})
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-500 px-2 py-1">
+                          MCO: {formatCurrencyUtil(parseFloat(request.mco), request.currency || 'USD')}
+                          {request.currency && request.currency !== 'USD' && request.mcoUSD && (
+                            <span className="text-xs text-gray-600 ml-1">
+                              (≈ {formatCurrencyUtil(parseFloat(request.mcoUSD), 'USD')})
+                            </span>
+                          )}
+                        </div>
+                      </td>
                         <td className="p-3">
                           <div className="text-sm text-gray-700">{request.date} {request.time}</div>
                         </td>
