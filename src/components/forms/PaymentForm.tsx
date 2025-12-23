@@ -2,46 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { toast } from "../../components/ui/use-toast";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-
-interface TicketRequest {
-  _id: string;
-  passengerName: string;
-  passengerEmail: string;
-  phoneNumber: string;
-  airlineCode: string;
-  confirmationCode: string;
-  ticketCost: string;
-  status: string;
-  mco: string;
-  mcoUSD: string;
-  paymentMethod?: string;
-  cardholderName?: string;
-  cardNumber?: string;
-  expiryDate?: string;
-  cvv?: string;
-  date: string;
-  time?: string;
-  datetime?: string;
-  consultant?: string;
-  ticketType?: string;
-  requestFor?: string;
-  Desc?: string;
-  billingZipCode: string;
-  billingCountry: string;
-  billingState: string;
-  billingCity: string;
-  billingAddress: string;
-  billingEmail?: string;
-  billingFirstName?: string;
-  billingLastName?: string;
-  billingPhone?: string;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-  amount?: number;
-  userName?: string;
-  email?: string;
-}
+import type { TicketRequest } from '@/types/ticketRequest';
 
 interface StatusData {
   paymentMethod: string;
@@ -102,11 +63,12 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       }
 
       // Send payment method to backend
+      const mcoAmount = selectedRequest.mcoUSD || selectedRequest.mco;
       const response = await axios.post(
         `${import.meta.env.VITE_BASE_URL}/stripe/create-payment-intent`,
         {
           ticketRequestId: selectedRequest._id,
-          amount: Math.round(parseFloat(selectedRequest.mcoUSD) * 100), // Convert to cents
+          amount: Math.round(parseFloat(mcoAmount) * 100), // Convert to cents
           paymentMethodId: paymentMethod.id,
           description: selectedRequest.Desc,
         },
@@ -130,7 +92,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       // Success
       toast({
         title: "Payment Successful",
-        description: `Payment of $${selectedRequest.mcoUSD} completed.`,
+        description: `Payment of $${selectedRequest.mcoUSD || selectedRequest.mco} completed.`,
         className: "bg-green-500 border border-green-200 text-white",
       });
 
