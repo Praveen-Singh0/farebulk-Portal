@@ -1,18 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, RefreshCw, Eye, X } from "lucide-react";
+import { Search, RefreshCw, Eye, X, Send, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import axios, { AxiosError } from "axios";
 import { useAuth } from "@/contexts/use-auth";
 import { toast } from "../components/ui/use-toast";
 import PaymentForm from "@/components/forms/PaymentForm";
+import SquarePaymentForm from "@/components/forms/SquarePaymentForm";
+import PaymentForm2 from "@/components/forms/PaymentForm2";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { formatCurrency as formatCurrencyUtil } from '@/lib/currencyUtils';
 import type { TicketRequest } from '@/types/ticketRequest';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+const stripePromise2 = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY_2);
 
 interface TicketRequestLocal extends TicketRequest {
   // Add any local-specific fields if needed
@@ -44,6 +47,8 @@ export default function Submission() {
     remark: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingAuthEmail, setIsSendingAuthEmail] = useState(false);
+  const [authEmailSent, setAuthEmailSent] = useState(false);
 
   const fetchTicketRequests = async () => {
     try {
@@ -328,6 +333,61 @@ export default function Submission() {
       paymentMethod: "",
       remark: "",
     });
+    setAuthEmailSent(false);
+  };
+
+  // Send Authorization Email handler
+  const handleSendAuthEmail = async () => {
+    if (!selectedRequest) return;
+
+    const customerEmail = selectedRequest.passengerEmail || selectedRequest.billingEmail;
+    if (!customerEmail) {
+      toast({
+        title: "No Email Found",
+        description: "This ticket has no customer email address.",
+        className: "bg-red-500 border border-red-200 text-white",
+      });
+      return;
+    }
+
+    try {
+      setIsSendingAuthEmail(true);
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/auth-email/send`,
+        {
+          ticketRequestId: selectedRequest._id,
+          agentName: user?.userName || user?.email || "Booking Desk",
+        },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setAuthEmailSent(true);
+        toast({
+          title: "Authorization Email Sent ✅",
+          description: `Sent to ${response.data.sentTo}`,
+          className: "bg-green-500 border border-green-200 text-white",
+        });
+      } else {
+        toast({
+          title: "Failed to Send",
+          description: response.data.message || "Something went wrong.",
+          className: "bg-red-500 border border-red-200 text-white",
+        });
+      }
+    } catch (error) {
+      console.error("Error sending auth email:", error);
+      const err = error as AxiosError;
+      const errorData = err.response?.data as { message?: string } | undefined;
+      toast({
+        title: "Email Error",
+        description: errorData?.message || "Failed to send authorization email.",
+        className: "bg-red-500 border border-red-200 text-white",
+      });
+    } finally {
+      setIsSendingAuthEmail(false);
+    }
   };
 
   // Error state
@@ -650,7 +710,9 @@ export default function Submission() {
                               Phone Number
                             </label>
                             <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                              {selectedRequest.phoneNumber}
+                              <a href={`sip:${selectedRequest.phoneNumber}`} className="text-green-600 hover:text-green-800 hover:underline cursor-pointer" title="Call with Zoiper">
+                                📞 {selectedRequest.phoneNumber}
+                              </a>
                             </p>
                           </div>
                         </div>
@@ -1000,6 +1062,36 @@ export default function Submission() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Send Authorization Email Button */}
+                    <div className="flex justify-center pt-4">
+                      <button
+                        onClick={handleSendAuthEmail}
+                        disabled={isSendingAuthEmail}
+                        className={`px-6 py-3 rounded-xl flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed ${
+                          authEmailSent
+                            ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                            : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white'
+                        }`}
+                      >
+                        {isSendingAuthEmail ? (
+                          <>
+                            <RefreshCw className="h-5 w-5 animate-spin" />
+                            <span>Sending Auth Email...</span>
+                          </>
+                        ) : authEmailSent ? (
+                          <>
+                            <CheckCircle className="h-5 w-5" />
+                            <span>Auth Email Sent ✓</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="h-5 w-5" />
+                            <span>Send Authorization Email</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="max-w-2xl mx-auto">
@@ -1076,6 +1168,8 @@ export default function Submission() {
                               <option value="Authorize US">
                                 Authorize US - Myfaredeal
                               </option>
+                              <option value="Square">Myfaredeal INC (Canada)</option>
+                              <option value="Stripe US">Authorize US - Moon lighter LLC</option>
                             </select>
                           </div>
                         </div>
@@ -1116,6 +1210,22 @@ export default function Submission() {
                                 />
                               </Elements>
 
+                            ) : statusData.paymentMethod === 'Square' ? (
+                              <SquarePaymentForm
+                                selectedRequest={selectedRequest}
+                                statusData={statusData}
+                                fetchTicketRequests={fetchTicketRequests}
+                                closeModal={closeModal}
+                              />
+                            ) : statusData.paymentMethod === 'Stripe US' ? (
+                              <Elements stripe={stripePromise2}>
+                                <PaymentForm2
+                                  selectedRequest={selectedRequest}
+                                  statusData={statusData}
+                                  fetchTicketRequests={fetchTicketRequests}
+                                  closeModal={closeModal}
+                                />
+                              </Elements>
                             ) : (
                               <button
                                 onClick={handleStatusUpdate}

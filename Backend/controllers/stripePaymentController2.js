@@ -1,20 +1,15 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_2);
 const TicketRequest = require('../models/TicketRequest');
 const TicketRequestStatus = require('../models/TicketRequestStatus');
 const { User } = require('../models/User');
 const { convertCurrency } = require('../utils/currencyConverter');
 
-const createStripePaymentIntent = async (req, res) => {
+const createStripePaymentIntent2 = async (req, res) => {
     try {
         const { ticketRequestId, amount, paymentMethodId, description } = req.body;
 
-        console.log('description:', description);
+        console.log('Stripe US - Payment request received:', { ticketRequestId, amount, paymentMethodId });
 
-        
-
-        console.log('Payment request received:', { ticketRequestId, amount, paymentMethodId });
-
-        // Validate inputs
         if (!ticketRequestId || !amount || !paymentMethodId) {
             return res.status(400).json({ 
                 success: false,
@@ -22,7 +17,6 @@ const createStripePaymentIntent = async (req, res) => {
             });
         }
 
-        // Validate amount is positive
         if (amount <= 0) {
             return res.status(400).json({
                 success: false,
@@ -30,7 +24,6 @@ const createStripePaymentIntent = async (req, res) => {
             });
         }
 
-        // Find ticket request
         const ticketRequest = await TicketRequest.findById(ticketRequestId);
         if (!ticketRequest) {
             return res.status(404).json({
@@ -39,7 +32,6 @@ const createStripePaymentIntent = async (req, res) => {
             });
         }
 
-        // Find user
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({
@@ -48,9 +40,8 @@ const createStripePaymentIntent = async (req, res) => {
             }); 
         }
 
-        console.log('Creating payment intent for user:', user.email);
+        console.log('Stripe US - Creating payment intent for user:', user.email);
 
-        // Convert amount to USD cents if needed (Stripe requires USD)
         const currency = ticketRequest.currency || 'USD';
         let amountInUSD = amount;
         
@@ -58,40 +49,39 @@ const createStripePaymentIntent = async (req, res) => {
             amountInUSD = convertCurrency(amount, currency, 'USD');
         }
 
-        // Create payment intent and confirm immediately
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(amountInUSD), // Already in cents from frontend
+            amount: Math.round(amountInUSD),
             currency: 'usd',
             payment_method: paymentMethodId,
             confirmation_method: 'automatic',
             confirm: true,
-            return_url: 'https://your-domain.com/payment-return', // Add this line
+            return_url: process.env.FRONTEND_URL || 'https://crm.farebulk.com',
             description: description || `Payment for Ticket Request ${ticketRequestId}`,
             metadata: {
                 ticketRequestId: ticketRequestId, 
                 userId: user._id.toString(),
                 userEmail: user.email,
                 originalCurrency: currency,
-                originalAmount: amount.toString()
+                originalAmount: amount.toString(),
+                gateway: 'Stripe US'
             }
         });
 
-        console.log('Payment intent created:', paymentIntent.id, 'Status:', paymentIntent.status);
+        console.log('Stripe US - Payment intent created:', paymentIntent.id, 'Status:', paymentIntent.status);
 
-        // Handle different payment statuses
         if (paymentIntent.status === 'succeeded') {
-            console.log('Payment succeeded immediately');
+            console.log('Stripe US - Payment succeeded immediately');
             await updateTicketStatus(ticketRequest, 'Charge', user, paymentIntent.id);
 
             return res.status(200).json({
                 success: true,
                 paymentIntentId: paymentIntent.id,
                 status: 'succeeded',
-                message: 'Payment completed successfully'
+                message: 'Payment completed successfully via Stripe US'
             });
         }
         else if (paymentIntent.status === 'requires_action') {
-            console.log('Payment requires 3D Secure authentication');
+            console.log('Stripe US - Payment requires 3D Secure authentication');
 
             return res.status(200).json({
                 success: true,
@@ -102,7 +92,7 @@ const createStripePaymentIntent = async (req, res) => {
             });
         }
         else {
-            console.log('Payment failed with status:', paymentIntent.status);
+            console.log('Stripe US - Payment failed with status:', paymentIntent.status);
 
             return res.status(400).json({
                 success: false,
@@ -112,9 +102,8 @@ const createStripePaymentIntent = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('Payment processing error:', error);
+        console.error('Stripe US - Payment processing error:', error);
 
-        // Handle Stripe-specific errors
         let message = 'Payment processing failed';
         let code = 'payment_error';
         let statusCode = 500;
@@ -150,25 +139,21 @@ const createStripePaymentIntent = async (req, res) => {
     }
 };
 
-// ✅ Update ticket status exactly like your Authorize.Net implementation
 const updateTicketStatus = async (ticketRequest, status, user, paymentIntentId) => {
     try {
-        console.log(`Updating ticket ${ticketRequest._id} status to ${status}`);
+        console.log(`Stripe US - Updating ticket ${ticketRequest._id} status to ${status}`);
 
-        // Get updatedBy string
         const updatedBy = user.userName || user.email || user._id.toString();
 
-        // ✅ Update ticketRequest status and save (exactly like your pattern)
         ticketRequest.status = status;
         if (paymentIntentId) {
             ticketRequest.paymentIntentId = paymentIntentId;
         }
         if (status === 'Charge') {
-            ticketRequest.paymentMethod = 'Stripe';
+            ticketRequest.paymentMethod = 'Stripe US';
         }
         await ticketRequest.save();
 
-        // Calculate sale amounts with currency support
         const currency = ticketRequest.currency || 'USD';
         const mcoAmount = parseFloat(ticketRequest.mco) || 0;
         const saleAmountOriginal = mcoAmount - (mcoAmount * 0.15);
@@ -179,18 +164,17 @@ const updateTicketStatus = async (ticketRequest, status, user, paymentIntentId) 
             saleAmountUSD = convertCurrency(saleAmountOriginal, currency, 'USD');
         }
 
-        // ✅ Create new TicketRequestStatus record (exactly like your pattern)
         const remark = status === 'Charge'
-            ? `Payment successful via Stripe - Transaction ID: ${paymentIntentId}`
-            : `Payment failed via Stripe${paymentIntentId ? ` - Transaction ID: ${paymentIntentId}` : ''}`;
+            ? `Payment successful via Stripe US - Transaction ID: ${paymentIntentId}`
+            : `Payment failed via Stripe US${paymentIntentId ? ` - Transaction ID: ${paymentIntentId}` : ''}`;
 
         const ticketRequestStatus = new TicketRequestStatus({
-            ticketRequest, // Pass the entire ticketRequest object
+            ticketRequest,
             status,
-            paymentMethod: 'Stripe',
+            paymentMethod: 'Stripe US',
             remark,
             updatedBy,
-            paymentIntentId, // Add paymentIntentId to the status record too
+            paymentIntentId,
             currency,
             saleAmountOriginal,
             saleAmountUSD,
@@ -198,14 +182,14 @@ const updateTicketStatus = async (ticketRequest, status, user, paymentIntentId) 
         });
 
         await ticketRequestStatus.save();
-        console.log('Ticket status updated successfully');
+        console.log('Stripe US - Ticket status updated successfully');
 
     } catch (error) {
-        console.error('Error updating ticket status:', error);
-        throw error; // Re-throw to handle in calling function
+        console.error('Stripe US - Error updating ticket status:', error);
+        throw error;
     }
 };
 
 module.exports = {
-    createStripePaymentIntent,
+    createStripePaymentIntent2,
 };

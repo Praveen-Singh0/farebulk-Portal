@@ -660,7 +660,9 @@ export default function MySale() {
                           Phone
                         </label>
                         <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
-                          {selectedStatus.ticketRequest?.phoneNumber}
+                          <a href={`sip:${selectedStatus.ticketRequest?.phoneNumber}`} className="text-green-600 hover:text-green-800 hover:underline cursor-pointer" title="Call with Zoiper">
+                            📞 {selectedStatus.ticketRequest?.phoneNumber}
+                          </a>
                         </p>
                       </div>
                     </div>

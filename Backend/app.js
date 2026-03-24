@@ -15,8 +15,17 @@ const ticketRequestRoutes = require('./routes/ticketRequest');
 const ticketRequestStatusRoutes = require('./routes/ticketRequestStatusRoutes');
 const HandleAuthUSPayment = require('./routes/HandleAuthUSPayment');
 const HandleStripePayment = require('./routes/HandleStripePayment');
+const HandleStripePayment2 = require('./routes/HandleStripePayment2');
 const multiSiteCrmRoutes = require('./routes/multiSiteCrm');
 const callDescriptionRoutes = require('./routes/callDescriptionRoutes');
+const authEmailRoutes = require('./routes/authEmailRoutes');
+const authRecordRoutes = require('./routes/authRecordRoutes');
+const squarePaymentRoutes = require('./routes/squarePaymentRoutes');
+const activityLogRoutes = require('./routes/activityLogRoutes');
+const sipConfigRoutes = require('./routes/sipConfigRoutes');
+const callerIdRoutes = require('./routes/callerIdRoutes');
+const trunkConfigRoutes = require('./routes/trunkConfigRoutes');
+const callDashboardRoutes = require('./routes/callDashboardRoutes');
 
 
 const app = express();
@@ -54,10 +63,19 @@ app.use('/api/auth', authRoutes);
 app.use('/api/ticket-requests', ticketRequestRoutes);
 app.use('/api/ticket-requests-status', ticketRequestStatusRoutes);
 app.use('/api/ticket-requests-AuthrizeUS', HandleAuthUSPayment);
-app.use('/api/stripe', HandleStripePayment); 
+app.use('/api/stripe', HandleStripePayment);
+app.use('/api/stripe2', HandleStripePayment2);
+app.use('/api/square', squarePaymentRoutes); 
 app.use('/api/items', itemRoutes);
 app.use('/api', multiSiteCrmRoutes);
 app.use('/api', callDescriptionRoutes);
+app.use('/api/auth-email', authEmailRoutes);
+app.use('/api/auth-records', authRecordRoutes);
+app.use('/api/activity', activityLogRoutes);
+app.use('/api/sip', sipConfigRoutes);
+app.use('/api/caller-id', callerIdRoutes);
+app.use('/api/trunk', trunkConfigRoutes);
+app.use('/api/ami', callDashboardRoutes);
 
 app.get('/api/dashboard', verifyUser, async (req, res) => {
   try {

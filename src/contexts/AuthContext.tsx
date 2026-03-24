@@ -125,6 +125,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     setLoading(true)
     try {
+      // Log logout activity before clearing session
+      try {
+        await axios.post(`${import.meta.env.VITE_BASE_URL}/activity/log`, { action: 'logout' }, {
+          withCredentials: true,
+        });
+      } catch (e) {
+        console.log('Activity log failed:', e);
+      }
       await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/logout`, {}, {
         withCredentials: true,
       });

@@ -74,7 +74,7 @@ const createCallDescription = async (req, res) => {
 const getAllCallDescriptions = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 500;
     const skip = (page - 1) * limit;
 
     // Filter options
@@ -87,6 +87,9 @@ const getAllCallDescriptions = async (req, res) => {
     }
     if (req.query.date) {
       filter.date = req.query.date;
+    }
+    if (req.query.user) {
+      filter.user = req.query.user;
     }
 
     const callDescriptions = await CallDescription.find(filter)

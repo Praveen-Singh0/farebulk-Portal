@@ -541,7 +541,11 @@ export default function Submission() {
                             onChange={(e) => setSelectedRequest((prev) => prev && { ...prev, phoneNumber: e.target.value })}
                           />
                         ) : (
-                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">{selectedRequest.phoneNumber || "N/A"}</p>
+                          <p className="text-gray-900 bg-white/60 px-3 py-2 rounded-lg">
+                            <a href={`sip:${selectedRequest.phoneNumber}`} className="text-green-600 hover:text-green-800 hover:underline cursor-pointer" title="Call with Zoiper">
+                              📞 {selectedRequest.phoneNumber || "N/A"}
+                            </a>
+                          </p>
                         )}
                       </div>
                     </div>

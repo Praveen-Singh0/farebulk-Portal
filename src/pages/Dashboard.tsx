@@ -18,12 +18,18 @@ import TicketRequest from "./TicketRequest";
 import Submission from "./Submissions";
 import MySale from "./mySale";
 import APIBooking from "./APIBooking";
-import { Bell } from "lucide-react";
+import { Bell, Coffee, ArrowLeftCircle } from "lucide-react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Notes from "./Notes";
 import CallDescriptionsTable from "./CallDescriptionsTable";
+import AuthRecords from "./AuthRecords";
+import ActivityTracker from "./ActivityTracker";
+import SipPhone from "../components/SipPhone";
+import SipSettings from "./SipSettings";
+import TrunkSettings from "./TrunkSettings";
+import CallDashboard from "./CallDashboard";
 
 interface TicketRequest {
   _id: string;
@@ -60,6 +66,32 @@ const Dashboard: React.FC = () => {
     useState<boolean>(false);
   const [isNotesOpen, setIsNotesOpen] = useState<boolean>(false);
   const [pendingRequests, setPendingRequests] = useState<TicketRequest[]>([]);
+  const [isOnBreak, setIsOnBreak] = useState<boolean>(false);
+  const [breakLoading, setBreakLoading] = useState<boolean>(false);
+
+  const handleBreak = async () => {
+    setBreakLoading(true);
+    try {
+      await axios.post(`${import.meta.env.VITE_BASE_URL}/activity/log`, { action: 'break' }, { withCredentials: true });
+      setIsOnBreak(true);
+    } catch (err) {
+      console.error('Failed to log break:', err);
+    } finally {
+      setBreakLoading(false);
+    }
+  };
+
+  const handleBack = async () => {
+    setBreakLoading(true);
+    try {
+      await axios.post(`${import.meta.env.VITE_BASE_URL}/activity/log`, { action: 'back' }, { withCredentials: true });
+      setIsOnBreak(false);
+    } catch (err) {
+      console.error('Failed to log back:', err);
+    } finally {
+      setBreakLoading(false);
+    }
+  };
 
   // Check if we're on the dashboard overview page
   const isDashboardOverview =
@@ -423,6 +455,27 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
 
+              {/* Break / Back button */}
+              {isOnBreak ? (
+                <button
+                  onClick={handleBack}
+                  disabled={breakLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 transition-colors border border-green-300"
+                >
+                  <ArrowLeftCircle className="h-4 w-4" />
+                  {breakLoading ? 'Resuming...' : 'Back from Break'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleBreak}
+                  disabled={breakLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition-colors border border-yellow-300"
+                >
+                  <Coffee className="h-4 w-4" />
+                  {breakLoading ? 'Logging...' : 'Break'}
+                </button>
+              )}
+
               {/* Logout button */}
               <Button variant="ghost" onClick={logout}>
                 Logout
@@ -472,6 +525,11 @@ const Dashboard: React.FC = () => {
               }
             />
             <Route path="ticket-request" element={<TicketRequest />} />
+              <Route path="auth-records" element={<AuthRecords />} />
+            <Route path="activity" element={<ActivityTracker />} />
+            <Route path="sip-settings" element={<SipSettings />} />
+            <Route path="trunk-settings" element={<TrunkSettings />} />
+            <Route path="call-dashboard" element={<CallDashboard />} />
             <Route path="profile" element={<div>Comming Soon</div>} />
             <Route
               path="submissions"
@@ -492,6 +550,9 @@ const Dashboard: React.FC = () => {
           </Routes>
         </main>
       </div>
+
+      {/* SIP Softphone Widget */}
+      <SipPhone />
 
       {/* Toast Container */}
       <ToastContainer

@@ -1,0 +1,813 @@
+import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  Phone,
+  PhoneCall,
+  PhoneOff,
+  PhoneIncoming,
+  Mic,
+  MicOff,
+  Pause,
+  Play,
+  Delete,
+  Minimize2,
+  Maximize2,
+  Volume2,
+  VolumeX,
+  Wifi,
+  WifiOff,
+  X,
+  Loader2,
+} from "lucide-react";
+import axios from "axios";
+import {
+  UserAgent,
+  Registerer,
+  RegistererState,
+  Inviter,
+  SessionState,
+  UserAgentState,
+} from "sip.js";
+import type { Invitation } from "sip.js";
+import type { Session } from "sip.js";
+
+const baseURL = import.meta.env.VITE_BASE_URL;
+
+const DTMF_TONES = [
+  ["1", "2", "3"],
+  ["4", "5", "6"],
+  ["7", "8", "9"],
+  ["*", "0", "#"],
+];
+
+type PhoneStatus =
+  | "disconnected"
+  | "connecting"
+  | "registered"
+  | "ringing-out"
+  | "ringing-in"
+  | "in-call"
+  | "on-hold"
+  | "error";
+
+interface SipCredentials {
+  sipExtension: string;
+  sipPassword: string;
+  sipDomain: string;
+  wssServer: string;
+  displayName: string;
+}
+
+const SipPhone = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [dialNumber, setDialNumber] = useState("");
+  const [recentCalls, setRecentCalls] = useState<string[]>([]);
+  const [status, setStatus] = useState<PhoneStatus>("disconnected");
+  const [statusText, setStatusText] = useState("Offline");
+  const [callTimer, setCallTimer] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isHeld, setIsHeld] = useState(false);
+  const [incomingCaller, setIncomingCaller] = useState("");
+  const [showDtmf, setShowDtmf] = useState(false);
+  const [credentials, setCredentials] = useState<SipCredentials | null>(null);
+  const [credError, setCredError] = useState("");
+
+  const userAgentRef = useRef<UserAgent | null>(null);
+  const registererRef = useRef<Registerer | null>(null);
+  const sessionRef = useRef<Session | null>(null);
+  const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Load recent calls
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("crm_recent_calls");
+      if (saved) setRecentCalls(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  // Create audio element for remote audio
+  useEffect(() => {
+    const audio = new Audio();
+    audio.autoplay = true;
+    remoteAudioRef.current = audio;
+    return () => {
+      audio.pause();
+      audio.srcObject = null;
+    };
+  }, []);
+
+  // Fetch SIP credentials on mount
+  useEffect(() => {
+    fetchCredentials();
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupCall();
+      if (registererRef.current) {
+        try { registererRef.current.unregister(); } catch {}
+      }
+      if (userAgentRef.current) {
+        try { userAgentRef.current.stop(); } catch {}
+      }
+    };
+  }, []);
+
+  const fetchCredentials = async () => {
+    try {
+      const res = await axios.get(`${baseURL}/sip/my-config`, {
+        withCredentials: true,
+      });
+      setCredentials(res.data);
+      setCredError("");
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "No SIP config found";
+      setCredError(msg);
+      setCredentials(null);
+    }
+  };
+
+  const addRecentCall = (number: string) => {
+    const updated = [number, ...recentCalls.filter((n) => n !== number)].slice(0, 10);
+    setRecentCalls(updated);
+    localStorage.setItem("crm_recent_calls", JSON.stringify(updated));
+  };
+
+  // ─── SIP CONNECT ─────────────────────────────────────────
+  const connectSip = useCallback(async () => {
+    if (!credentials) return;
+    if (userAgentRef.current && status !== "disconnected" && status !== "error") return;
+
+    setStatus("connecting");
+    setStatusText("Connecting...");
+
+    try {
+      // Clean up existing UA
+      if (userAgentRef.current) {
+        try { await userAgentRef.current.stop(); } catch {}
+        userAgentRef.current = null;
+        registererRef.current = null;
+      }
+
+      const uri = UserAgent.makeURI(`sip:${credentials.sipExtension}@${credentials.sipDomain}`);
+      if (!uri) throw new Error("Invalid SIP URI");
+
+      const transportOptions = {
+        server: credentials.wssServer,
+        traceSip: false,
+      };
+
+      const ua = new UserAgent({
+        uri,
+        transportOptions,
+        authorizationUsername: credentials.sipExtension,
+        authorizationPassword: credentials.sipPassword,
+        displayName: credentials.displayName || credentials.sipExtension,
+        logLevel: "error",
+        delegate: {
+          onInvite: (invitation: Invitation) => {
+            handleIncomingCall(invitation);
+          },
+        },
+      });
+
+      // Listen to transport state
+      ua.stateChange.addListener((state: UserAgentState) => {
+        if (state === UserAgentState.Stopped) {
+          setStatus("disconnected");
+          setStatusText("Offline");
+        }
+      });
+
+      await ua.start();
+      userAgentRef.current = ua;
+
+      // Register
+      const registerer = new Registerer(ua, {
+        expires: 300,
+      });
+
+      registerer.stateChange.addListener((state: RegistererState) => {
+        switch (state) {
+          case RegistererState.Registered:
+            setStatus("registered");
+            setStatusText(`Ext: ${credentials.sipExtension}`);
+            break;
+          case RegistererState.Unregistered:
+            setStatus("disconnected");
+            setStatusText("Unregistered");
+            break;
+          case RegistererState.Terminated:
+            setStatus("disconnected");
+            setStatusText("Terminated");
+            break;
+        }
+      });
+
+      await registerer.register();
+      registererRef.current = registerer;
+    } catch (error: any) {
+      console.error("SIP connect error:", error);
+      setStatus("error");
+      setStatusText(error.message || "Connection failed");
+    }
+  }, [credentials, status]);
+
+  // ─── DISCONNECT ───────────────────────────────────────────
+  const disconnectSip = async () => {
+    cleanupCall();
+    if (registererRef.current) {
+      try { await registererRef.current.unregister(); } catch {}
+      registererRef.current = null;
+    }
+    if (userAgentRef.current) {
+      try { await userAgentRef.current.stop(); } catch {}
+      userAgentRef.current = null;
+    }
+    setStatus("disconnected");
+    setStatusText("Offline");
+  };
+
+  // ─── INCOMING CALL ────────────────────────────────────────
+  const handleIncomingCall = (invitation: Invitation) => {
+    sessionRef.current = invitation;
+    const caller =
+      invitation.remoteIdentity?.uri?.user ||
+      invitation.remoteIdentity?.displayName ||
+      "Unknown";
+    setIncomingCaller(caller);
+    setStatus("ringing-in");
+    setStatusText(`Incoming: ${caller}`);
+    setIsOpen(true);
+    setIsMinimized(false);
+
+    // If session ends while ringing
+    invitation.stateChange.addListener((state: SessionState) => {
+      if (state === SessionState.Terminated) {
+        cleanupCall();
+        setStatus("registered");
+        setStatusText(`Ext: ${credentials?.sipExtension || ""}`);
+      }
+    });
+  };
+
+  // ─── ANSWER INCOMING ──────────────────────────────────────
+  const answerCall = async () => {
+    const session = sessionRef.current as Invitation;
+    if (!session) return;
+
+    try {
+      await (session as any).accept({
+        sessionDescriptionHandlerOptions: {
+          constraints: { audio: true, video: false },
+        },
+      });
+      setupSessionAudio(session);
+      setStatus("in-call");
+      setStatusText(`On call: ${incomingCaller}`);
+      startCallTimer();
+    } catch (error) {
+      console.error("Answer error:", error);
+      setStatus("error");
+      setStatusText("Failed to answer");
+    }
+  };
+
+  // ─── REJECT INCOMING ──────────────────────────────────────
+  const rejectCall = async () => {
+    const session = sessionRef.current as Invitation;
+    if (!session) return;
+    try {
+      await (session as any).reject();
+    } catch {}
+    cleanupCall();
+    setStatus("registered");
+    setStatusText(`Ext: ${credentials?.sipExtension || ""}`);
+  };
+
+  // ─── MAKE OUTBOUND CALL ───────────────────────────────────
+  const makeCall = async (number?: string) => {
+    const num = (number || dialNumber).trim();
+    if (!num || !userAgentRef.current || status !== "registered") return;
+
+    addRecentCall(num);
+    setStatus("ringing-out");
+    setStatusText(`Calling: ${num}`);
+
+    try {
+      const target = UserAgent.makeURI(`sip:${num}@${credentials!.sipDomain}`);
+      if (!target) throw new Error("Invalid target URI");
+
+      const inviter = new Inviter(userAgentRef.current, target, {
+        sessionDescriptionHandlerOptions: {
+          constraints: { audio: true, video: false },
+        },
+      });
+
+      sessionRef.current = inviter;
+
+      inviter.stateChange.addListener((state: SessionState) => {
+        switch (state) {
+          case SessionState.Establishing:
+            setStatus("ringing-out");
+            setStatusText(`Ringing: ${num}`);
+            break;
+          case SessionState.Established:
+            setStatus("in-call");
+            setStatusText(`On call: ${num}`);
+            setupSessionAudio(inviter);
+            startCallTimer();
+            break;
+          case SessionState.Terminated:
+            cleanupCall();
+            setStatus("registered");
+            setStatusText(`Ext: ${credentials?.sipExtension || ""}`);
+            break;
+        }
+      });
+
+      await inviter.invite();
+    } catch (error: any) {
+      console.error("Call error:", error);
+      cleanupCall();
+      setStatus("error");
+      setStatusText(error.message || "Call failed");
+      setTimeout(() => {
+        setStatus("registered");
+        setStatusText(`Ext: ${credentials?.sipExtension || ""}`);
+      }, 3000);
+    }
+  };
+
+  // ─── HANG UP ──────────────────────────────────────────────
+  const hangUp = async () => {
+    const session = sessionRef.current;
+    if (!session) return;
+
+    try {
+      switch (session.state) {
+        case SessionState.Initial:
+        case SessionState.Establishing:
+          if ("cancel" in session) await (session as Inviter).cancel();
+          else if ("reject" in session) await (session as any).reject();
+          break;
+        case SessionState.Established:
+          await session.bye();
+          break;
+      }
+    } catch (error) {
+      console.error("Hangup error:", error);
+    }
+    cleanupCall();
+    setStatus("registered");
+    setStatusText(`Ext: ${credentials?.sipExtension || ""}`);
+  };
+
+  // ─── AUDIO SETUP ──────────────────────────────────────────
+  const setupSessionAudio = (session: Session) => {
+    const sdh = session.sessionDescriptionHandler;
+    if (!sdh) return;
+
+    const pc = (sdh as any).peerConnection as RTCPeerConnection | undefined;
+    if (!pc) return;
+
+    pc.getReceivers().forEach((receiver) => {
+      if (receiver.track && receiver.track.kind === "audio") {
+        const stream = new MediaStream([receiver.track]);
+        if (remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = stream;
+          remoteAudioRef.current.play().catch(() => {});
+        }
+      }
+    });
+
+    // Also listen for new tracks
+    pc.ontrack = (event) => {
+      if (event.track.kind === "audio") {
+        const stream = new MediaStream([event.track]);
+        if (remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = stream;
+          remoteAudioRef.current.play().catch(() => {});
+        }
+      }
+    };
+  };
+
+  // ─── MUTE / UNMUTE ────────────────────────────────────────
+  const toggleMute = () => {
+    const session = sessionRef.current;
+    if (!session) return;
+    const sdh = session.sessionDescriptionHandler;
+    if (!sdh) return;
+    const pc = (sdh as any).peerConnection as RTCPeerConnection | undefined;
+    if (!pc) return;
+
+    pc.getSenders().forEach((sender) => {
+      if (sender.track && sender.track.kind === "audio") {
+        sender.track.enabled = isMuted; // toggle
+      }
+    });
+    setIsMuted(!isMuted);
+  };
+
+  // ─── HOLD / UNHOLD ────────────────────────────────────────
+  const toggleHold = async () => {
+    const session = sessionRef.current;
+    if (!session) return;
+    const sdh = session.sessionDescriptionHandler;
+    if (!sdh) return;
+    const pc = (sdh as any).peerConnection as RTCPeerConnection | undefined;
+    if (!pc) return;
+
+    if (!isHeld) {
+      // Put on hold: set sendrecv to sendonly
+      pc.getSenders().forEach((sender) => {
+        if (sender.track) sender.track.enabled = false;
+      });
+      setIsHeld(true);
+      setStatus("on-hold");
+    } else {
+      // Resume
+      pc.getSenders().forEach((sender) => {
+        if (sender.track) sender.track.enabled = true;
+      });
+      setIsHeld(false);
+      setStatus("in-call");
+    }
+  };
+
+  // ─── DTMF ─────────────────────────────────────────────────
+  const sendDtmf = (tone: string) => {
+    const session = sessionRef.current;
+    if (!session || session.state !== SessionState.Established) return;
+
+    try {
+      const sdh = session.sessionDescriptionHandler;
+      if (!sdh) return;
+      const pc = (sdh as any).peerConnection as RTCPeerConnection | undefined;
+      if (!pc) return;
+
+      // Use RTP DTMF via the sender
+      pc.getSenders().forEach((sender) => {
+        if (sender.track && sender.track.kind === "audio" && (sender as any).dtmf) {
+          (sender as any).dtmf.insertDTMF(tone, 100, 70);
+        }
+      });
+    } catch (err) {
+      console.error("DTMF error:", err);
+    }
+  };
+
+  // ─── CALL TIMER ────────────────────────────────────────────
+  const startCallTimer = () => {
+    setCallTimer(0);
+    callTimerRef.current = setInterval(() => {
+      setCallTimer((prev) => prev + 1);
+    }, 1000);
+  };
+
+  const cleanupCall = () => {
+    if (callTimerRef.current) {
+      clearInterval(callTimerRef.current);
+      callTimerRef.current = null;
+    }
+    setCallTimer(0);
+    setIsMuted(false);
+    setIsHeld(false);
+    setIncomingCaller("");
+    setShowDtmf(false);
+    sessionRef.current = null;
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.srcObject = null;
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  const handleKeyPress = (tone: string) => {
+    if (status === "in-call" || status === "on-hold") {
+      sendDtmf(tone);
+    }
+    setDialNumber((prev) => prev + tone);
+  };
+
+  // ─── STATUS COLORS ────────────────────────────────────────
+  const getStatusColor = () => {
+    switch (status) {
+      case "registered": return "bg-green-500";
+      case "connecting": return "bg-yellow-500";
+      case "ringing-out": return "bg-blue-500";
+      case "ringing-in": return "bg-orange-500";
+      case "in-call": return "bg-green-500";
+      case "on-hold": return "bg-yellow-500";
+      case "error": return "bg-red-500";
+      default: return "bg-gray-400";
+    }
+  };
+
+  const isInCall = status === "in-call" || status === "on-hold" || status === "ringing-out";
+
+  // ─── MINIMIZED BUBBLE ─────────────────────────────────────
+  if (!isOpen) {
+    return (
+      <div className="fixed bottom-5 right-5 z-50">
+        <button
+          onClick={() => setIsOpen(true)}
+          className="group relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+          title="Open Softphone"
+        >
+          <Phone className="h-5 w-5 group-hover:animate-bounce" />
+          <span className="text-sm font-medium">Phone</span>
+          <span className={`absolute -top-1 -right-1 h-3 w-3 rounded-full ${getStatusColor()} border-2 border-white`} />
+          {status === "ringing-in" && (
+            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-orange-500 animate-ping" />
+          )}
+        </button>
+      </div>
+    );
+  }
+
+  // ─── MINIMIZED BAR (during call) ──────────────────────────
+  if (isMinimized && isInCall) {
+    return (
+      <div className="fixed bottom-5 right-5 z-50">
+        <div className="bg-gray-900 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 min-w-[280px]">
+          <span className={`h-2.5 w-2.5 rounded-full ${getStatusColor()} animate-pulse`} />
+          <span className="text-sm font-medium flex-1 truncate">{statusText}</span>
+          <span className="text-xs font-mono text-gray-400">{formatTime(callTimer)}</span>
+          <button onClick={toggleMute} className="p-1 hover:bg-white/10 rounded-lg">
+            {isMuted ? <MicOff className="h-4 w-4 text-red-400" /> : <Mic className="h-4 w-4" />}
+          </button>
+          <button onClick={hangUp} className="p-1.5 bg-red-500 hover:bg-red-600 rounded-lg">
+            <PhoneOff className="h-4 w-4" />
+          </button>
+          <button onClick={() => setIsMinimized(false)} className="p-1 hover:bg-white/10 rounded-lg">
+            <Maximize2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── FULL PHONE UI ────────────────────────────────────────
+  return (
+    <div className="fixed bottom-5 right-5 z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-80 overflow-hidden">
+
+        {/* Header */}
+        <div className={`px-4 py-3 flex items-center justify-between ${
+          isInCall ? "bg-gray-900" : status === "ringing-in" ? "bg-gradient-to-r from-orange-500 to-red-500" : "bg-gradient-to-r from-indigo-600 to-purple-600"
+        }`}>
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-white" />
+            <span className="text-sm font-semibold text-white">SIP Softphone</span>
+          </div>
+          <div className="flex items-center gap-1">
+            {isInCall && (
+              <button onClick={() => setIsMinimized(true)} className="p-1 hover:bg-white/20 rounded-lg" title="Minimize">
+                <Minimize2 className="h-3.5 w-3.5 text-white" />
+              </button>
+            )}
+            <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-white/20 rounded-lg" title="Close">
+              <X className="h-3.5 w-3.5 text-white" />
+            </button>
+          </div>
+        </div>
+
+        {/* Status bar */}
+        <div className={`px-4 py-2 border-b flex items-center gap-2 ${
+          status === "error" ? "bg-red-50 dark:bg-red-900/20 border-red-100" :
+          status === "registered" ? "bg-green-50 dark:bg-green-900/20 border-green-100" :
+          "bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-700"
+        }`}>
+          <span className={`h-2 w-2 rounded-full ${getStatusColor()} ${
+            status === "connecting" || status === "ringing-out" || status === "ringing-in" ? "animate-pulse" : ""
+          }`} />
+          <span className={`text-xs font-medium flex-1 ${
+            status === "error" ? "text-red-600" : status === "registered" ? "text-green-700" : "text-gray-600 dark:text-gray-300"
+          }`}>
+            {statusText}
+          </span>
+          {isInCall && (
+            <span className="text-xs font-mono text-gray-500">{formatTime(callTimer)}</span>
+          )}
+        </div>
+
+        {/* No credentials */}
+        {credError && (
+          <div className="p-4 text-center">
+            <WifiOff className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{credError}</p>
+            <p className="text-xs text-gray-400">Ask your admin to configure your SIP extension.</p>
+            <button onClick={fetchCredentials} className="mt-3 text-indigo-500 hover:text-indigo-600 text-xs font-medium">
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Connect/Disconnect buttons */}
+        {credentials && !credError && (
+          <>
+            {status === "disconnected" || status === "error" ? (
+              <div className="p-4 text-center">
+                <Wifi className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-xs text-gray-500 mb-3">
+                  Ext: {credentials.sipExtension} · {credentials.sipDomain}
+                </p>
+                <button
+                  onClick={connectSip}
+                  className="px-6 py-2.5 bg-indigo-500 text-white rounded-xl text-sm font-medium hover:bg-indigo-600 transition-colors flex items-center gap-2 mx-auto"
+                >
+                  <Wifi className="h-4 w-4" />
+                  Go Online
+                </button>
+              </div>
+            ) : status === "connecting" ? (
+              <div className="p-6 text-center">
+                <Loader2 className="h-8 w-8 text-indigo-500 mx-auto mb-2 animate-spin" />
+                <p className="text-sm text-gray-500">Connecting to SIP server...</p>
+              </div>
+            ) : status === "ringing-in" ? (
+              /* ─── INCOMING CALL UI ─── */
+              <div className="p-4">
+                <div className="text-center mb-4">
+                  <div className="h-16 w-16 mx-auto bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-3 animate-pulse">
+                    <PhoneIncoming className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <p className="text-lg font-semibold text-gray-800 dark:text-gray-100">{incomingCaller}</p>
+                  <p className="text-sm text-gray-500">Incoming call...</p>
+                </div>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={rejectCall}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors"
+                  >
+                    <PhoneOff className="h-5 w-5" />
+                    Decline
+                  </button>
+                  <button
+                    onClick={answerCall}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors animate-pulse"
+                  >
+                    <PhoneCall className="h-5 w-5" />
+                    Answer
+                  </button>
+                </div>
+              </div>
+            ) : isInCall ? (
+              /* ─── IN-CALL UI ─── */
+              <div className="p-3">
+                {/* Call controls */}
+                <div className="grid grid-cols-4 gap-2 mb-3">
+                  <button
+                    onClick={toggleMute}
+                    className={`flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs transition-colors ${
+                      isMuted ? "bg-red-100 dark:bg-red-900/20 text-red-600" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
+                    }`}
+                  >
+                    {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                    {isMuted ? "Unmute" : "Mute"}
+                  </button>
+                  <button
+                    onClick={toggleHold}
+                    className={`flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs transition-colors ${
+                      isHeld ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
+                    }`}
+                  >
+                    {isHeld ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
+                    {isHeld ? "Resume" : "Hold"}
+                  </button>
+                  <button
+                    onClick={() => setShowDtmf(!showDtmf)}
+                    className={`flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs transition-colors ${
+                      showDtmf ? "bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
+                    }`}
+                  >
+                    <span className="text-lg font-bold leading-5">#</span>
+                    DTMF
+                  </button>
+                  <button
+                    onClick={hangUp}
+                    className="flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs bg-red-500 text-white hover:bg-red-600 transition-colors"
+                  >
+                    <PhoneOff className="h-5 w-5" />
+                    End
+                  </button>
+                </div>
+
+                {/* DTMF Pad (in-call) */}
+                {showDtmf && (
+                  <div className="grid grid-cols-3 gap-1.5 mb-3">
+                    {DTMF_TONES.flat().map((tone) => (
+                      <button
+                        key={tone}
+                        onClick={() => sendDtmf(tone)}
+                        className="py-2 rounded-lg text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-indigo-50 active:bg-indigo-100 transition-colors"
+                      >
+                        {tone}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* ─── IDLE / DIAL PAD ─── */
+              <div className="px-4 py-3">
+                {/* Number input */}
+                <div className="flex items-center gap-2 mb-3">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={dialNumber}
+                    onChange={(e) => setDialNumber(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && dialNumber.trim()) makeCall();
+                    }}
+                    placeholder="Enter number..."
+                    className="flex-1 px-3 py-2.5 text-center text-lg font-mono bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800 dark:text-gray-100"
+                    autoFocus
+                  />
+                  {dialNumber && (
+                    <button onClick={() => setDialNumber((prev) => prev.slice(0, -1))} className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                      <Delete className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Dial pad keys */}
+                <div className="grid grid-cols-3 gap-2">
+                  {DTMF_TONES.flat().map((tone) => (
+                    <button
+                      key={tone}
+                      onClick={() => handleKeyPress(tone)}
+                      className="py-3 rounded-xl text-lg font-semibold bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 active:bg-indigo-100 transition-colors border border-gray-100 dark:border-gray-600"
+                    >
+                      {tone}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Call + Disconnect buttons */}
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => makeCall()}
+                    disabled={!dialNumber.trim()}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-md"
+                  >
+                    <PhoneCall className="h-5 w-5" />
+                    Call
+                  </button>
+                  <button
+                    onClick={disconnectSip}
+                    className="px-3 py-3 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-200 rounded-xl hover:bg-gray-300 transition-colors"
+                    title="Go Offline"
+                  >
+                    <WifiOff className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Recent calls (only when idle & registered) */}
+            {status === "registered" && recentCalls.length > 0 && (
+              <div className="border-t border-gray-100 dark:border-gray-700">
+                <div className="px-4 py-2">
+                  <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Recent</p>
+                </div>
+                <div className="max-h-28 overflow-y-auto">
+                  {recentCalls.slice(0, 5).map((num, i) => (
+                    <button
+                      key={i}
+                      onClick={() => makeCall(num)}
+                      className="w-full px-4 py-2 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
+                    >
+                      <PhoneCall className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                      <span className="text-sm font-mono text-gray-700 dark:text-gray-200 truncate">{num}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Footer */}
+        <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex items-center justify-between">
+          <p className="text-[10px] text-gray-400">
+            {credentials ? `${credentials.displayName || credentials.sipExtension}` : "Not configured"}
+          </p>
+          <span className={`h-2 w-2 rounded-full ${getStatusColor()}`} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SipPhone;

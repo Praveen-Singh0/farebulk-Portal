@@ -10,7 +10,12 @@ import {
   User,
   ClipboardList,
   X,
+  Shield,
   Plane,
+  Phone,
+  Activity,
+  Radio,
+  PhoneCall,
 } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -27,7 +32,12 @@ const Sidebar = ({ role }: SidebarProps) => {
     { name: "Call Logs", path: "/dashboard/callLogs", icon: BarChart3 },
     { name: "Consultants", path: "/dashboard/consultants", icon: Users },
     { name: "Flight Bookings", path: "/dashboard/APIBooking", icon: Plane },
-    { name: "Reports", path: "/dashboard/reports", icon: FileText },
+    { name: "Authorizations", path: "/dashboard/auth-records", icon: Shield },
+    { name: "Team Activity", path: "/dashboard/activity", icon: Activity },
+    { name: "SIP Settings", path: "/dashboard/sip-settings", icon: Phone },
+    { name: "Trunk Config", path: "/dashboard/trunk-settings", icon: Radio },
+    { name: "Call Dashboard", path: "/dashboard/call-dashboard", icon: PhoneCall },
+      { name: "Reports", path: "/dashboard/reports", icon: FileText },
     { name: "Settings", path: "/dashboard/settings", icon: Settings },
   ];
 
@@ -40,8 +50,10 @@ const Sidebar = ({ role }: SidebarProps) => {
       path: "/dashboard/submissions",
       icon: ClipboardList,
     },
+    { name: "Call Logs", path: "/dashboard/callLogs", icon: Phone },
     { name: "Flight Bookings", path: "/dashboard/APIBooking", icon: Plane },
-    { name: "My Profile", path: "/dashboard/profile", icon: User },
+    { name: "Authorizations", path: "/dashboard/auth-records", icon: Shield },
+      { name: "My Profile", path: "/dashboard/profile", icon: User },
   ];
 
   const ticketConsultantMenu = [
@@ -55,7 +67,8 @@ const Sidebar = ({ role }: SidebarProps) => {
 
     { name: "My Sales", path: "/dashboard/my-sales", icon: BarChart3 },
     { name: "Flight Bookings", path: "/dashboard/APIBooking", icon: Plane },
-    { name: "My Profile", path: "/dashboard/profile", icon: User },
+    { name: "Authorizations", path: "/dashboard/auth-records", icon: Shield },
+      { name: "My Profile", path: "/dashboard/profile", icon: User },
   ];
 
   const menu =
