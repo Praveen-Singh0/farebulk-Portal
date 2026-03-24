@@ -15,6 +15,8 @@ function formatExpiryDate(expiry) {
 
 const authorizeUsPayment = async (req, res) => {
   try {
+
+    console.log("req.body : ",req.body)
     const { ticketRequestId } = req.body;
 
     let apiLoginKey = process.env.AUTHUSLOGINID;
