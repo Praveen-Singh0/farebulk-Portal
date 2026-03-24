@@ -40,7 +40,19 @@ if (paymentMethod === "Authorize US") {
   });
 }
 
-const billTo = new APIContracts.CustomerAddressType();
+   
+    if (!ticketRequestId) {
+      return res.status(400).json({ success: false, message: 'ticketRequestId is required' });
+    }
+
+    const ticketRequest = await TicketRequest.findById(ticketRequestId);
+    
+    
+    if (!ticketRequest) {
+      return res.status(404).json({ success: false, message: 'Ticket request not found' });
+    }
+
+    const billTo = new APIContracts.CustomerAddressType();
 
 billTo.setFirstName(ticketRequest.billingFirstName || "NA");
 billTo.setLastName(ticketRequest.billingLastName || "NA");
@@ -49,19 +61,7 @@ billTo.setCity(ticketRequest.billingCity || "NA");
 billTo.setState(ticketRequest.billingState || "NA");
 billTo.setCountry(ticketRequest.billingCountry || "US");
 
-// ❌ DO NOT ADD ZIP
-// billTo.setZip(...) ❌
 
-   
-    if (!ticketRequestId) {
-      return res.status(400).json({ success: false, message: 'ticketRequestId is required' });
-    }
-
-    const ticketRequest = await TicketRequest.findById(ticketRequestId);
-    
-    if (!ticketRequest) {
-      return res.status(404).json({ success: false, message: 'Ticket request not found' });
-    }
 
     const user = await User.findById(req.user.id).select('userName email');
     const updatedBy = user?.userName || user?.email || req.user.id;
