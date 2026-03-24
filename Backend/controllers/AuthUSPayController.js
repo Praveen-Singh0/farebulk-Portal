@@ -17,10 +17,40 @@ const authorizeUsPayment = async (req, res) => {
   try {
 
     console.log("req.body : ",req.body)
-    const { ticketRequestId } = req.body;
+    
+    const { ticketRequestId, paymentMethod } = req.body;
 
-    let apiLoginKey = process.env.AUTHUSLOGINID;
-    let transactionKey = process.env.AUTHUSTRANSACTIONKEY;
+
+
+    let apiLoginKey;
+let transactionKey;
+
+if (paymentMethod === "Authorize US") {
+  apiLoginKey = process.env.AUTHUSLOGINID;
+  transactionKey = process.env.AUTHUSTRANSACTIONKEY;
+
+} else if (paymentMethod === "Authorize US_2") {
+  apiLoginKey = process.env.AUTHUSLOGINID_2;
+  transactionKey = process.env.AUTHUSTRANSACTIONKEY_2;
+
+} else {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid payment method"
+  });
+}
+
+const billTo = new APIContracts.CustomerAddressType();
+
+billTo.setFirstName(ticketRequest.billingFirstName || "NA");
+billTo.setLastName(ticketRequest.billingLastName || "NA");
+billTo.setAddress(ticketRequest.billingAddress || "NA");
+billTo.setCity(ticketRequest.billingCity || "NA");
+billTo.setState(ticketRequest.billingState || "NA");
+billTo.setCountry(ticketRequest.billingCountry || "US");
+
+// ❌ DO NOT ADD ZIP
+// billTo.setZip(...) ❌
 
    
     if (!ticketRequestId) {
@@ -96,6 +126,7 @@ const authorizeUsPayment = async (req, res) => {
   transactionRequest.setTransactionType(APIContracts.TransactionTypeEnum.AUTHCAPTURETRANSACTION);
   transactionRequest.setPayment(paymentType);
   transactionRequest.setAmount(amountToCharge);
+  transactionRequest.setBillTo(billTo);
   // Do NOT set billTo (billing address) on transactionRequest
 
     // Set user fields using the correct structure

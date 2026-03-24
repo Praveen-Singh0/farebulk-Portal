@@ -1169,13 +1169,13 @@ export default function Submission() {
                                 Authorize US - Myfaredeal
                               </option>
                               <option value="Square">Myfaredeal INC (Canada)</option>
-                              <option value="Stripe US">Authorize US - Moon lighter LLC</option>
+                              <option value="Authorize US_2">Authorize US - Moon lighter LLC</option>
                             </select>
                           </div>
                         </div>
                         {/* Submit Button */}
                           <div className="flex justify-end pt-4">
-                            {statusData.paymentMethod === 'Authorize US' || statusData.paymentMethod === 'Flight Services' ? (
+                            {statusData.paymentMethod === 'Authorize US' || statusData.paymentMethod === 'Flight Services' || statusData.paymentMethod === 'Authorize US_2' ? (
                               <button
                                 onClick={handleAuthUsPayment}
                                 disabled={isSubmitting}
